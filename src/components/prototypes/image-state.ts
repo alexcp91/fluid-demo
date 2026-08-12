@@ -1,72 +1,261 @@
-import type { Align, BlockBg, ImageFit, Spacing, VAlign } from "@/email/schema"
+import type { Align, VAlign } from "@/email/schema"
 
-export const WIDTH_MODES = ["auto", "fixed", "max"] as const
-export const SIZE_PRESETS = ["hug", "half", "fill"] as const
-export const CORNER_PRESETS = ["none", "soft", "round", "pill"] as const
-export const IMAGE_SOURCES = ["landscape", "portrait"] as const
-export const DEVICE_VISIBILITY = ["all", "desktop", "mobile"] as const
+export const SIZE_MODES = ["auto", "fixed", "max"] as const
+export const SOURCE_MODES = ["upload", "url", "icons"] as const
+export const IMAGE_SOURCES = ["landscape", "portrait", "icon"] as const
+export const DEVICE_MODES = ["desktop", "mobile"] as const
+export const BORDER_STYLES = ["solid", "dashed", "dotted"] as const
+export const BACKGROUND_KINDS = ["none", "color", "image"] as const
+export const QUAD_EDGES = ["top", "right", "bottom", "left"] as const
+export const CORNER_EDGES = [
+  "topLeft",
+  "topRight",
+  "bottomRight",
+  "bottomLeft",
+] as const
 
-export type WidthMode = (typeof WIDTH_MODES)[number]
-export type SizePreset = (typeof SIZE_PRESETS)[number]
-export type CornerPreset = (typeof CORNER_PRESETS)[number]
+export type SizeMode = (typeof SIZE_MODES)[number]
+export type SourceMode = (typeof SOURCE_MODES)[number]
 export type ImageSource = (typeof IMAGE_SOURCES)[number]
-export type DeviceVisibility = (typeof DEVICE_VISIBILITY)[number]
-export type SizingModel = "width-mode" | "preset"
+export type DeviceMode = (typeof DEVICE_MODES)[number]
+export type BorderStyle = (typeof BORDER_STYLES)[number]
+export type BackgroundKind = (typeof BACKGROUND_KINDS)[number]
+export type QuadEdge = (typeof QUAD_EDGES)[number]
+export type CornerEdge = (typeof CORNER_EDGES)[number]
 
-export interface ImagePrototypeState {
-  source: ImageSource
-  alt: string
-  caption: string
-  href: string
+export interface Quad {
+  top: number
+  right: number
+  bottom: number
+  left: number
   linked: boolean
-  decorative: boolean
-  widthMode: WidthMode
+}
+
+export interface Corners {
+  topLeft: number
+  topRight: number
+  bottomRight: number
+  bottomLeft: number
+  linked: boolean
+}
+
+export interface ImageBorder {
+  width: number
+  style: BorderStyle
+  color: string
+}
+
+export interface ImageChrome {
+  visible: boolean
+  widthMode: SizeMode
   widthPx: number
-  sizePreset: SizePreset
+  heightMode: SizeMode
+  heightPx: number
   align: Align
   vAlign: VAlign
-  fit: ImageFit
-  corners: CornerPreset
-  padding: Spacing
-  fill: BlockBg
-  visible: boolean
-  device: DeviceVisibility
+  corners: Corners
+  padding: Quad
+  margin: Quad
+  borderEnabled: boolean
+  border: ImageBorder
+  background: BackgroundKind
+  backgroundColor: string
+}
+
+export interface ImagePrototypeState {
+  sourceMode: SourceMode
+  source: ImageSource
+  imageUrl: string
+  alt: string
+  href: string
+  openInNewTab: boolean
+  dynamicContent: boolean
+  device: DeviceMode
+  desktop: ImageChrome
+  mobile: ImageChrome
 }
 
 export const SOURCE_SRC = {
   landscape: "/prototypes/landscape.svg",
   portrait: "/prototypes/portrait.svg",
+  icon: "/prototypes/icon.svg",
 } as const satisfies Record<ImageSource, string>
 
 export const SOURCE_LABEL = {
   landscape: "landscape.svg",
   portrait: "portrait.svg",
+  icon: "icon.svg",
 } as const satisfies Record<ImageSource, string>
 
 export const SOURCE_BYTES = {
   landscape: "18 KB",
   portrait: "12 KB",
+  icon: "4 KB",
 } as const satisfies Record<ImageSource, string>
 
-export function defaultImagePrototype(): ImagePrototypeState {
+export function zeroQuad(): Quad {
+  return { top: 0, right: 0, bottom: 0, left: 0, linked: true }
+}
+
+export function zeroCorners(): Corners {
   return {
-    source: "landscape",
-    alt: "Wool beanie",
-    caption: "",
-    href: "",
-    linked: false,
-    decorative: false,
+    topLeft: 0,
+    topRight: 0,
+    bottomRight: 0,
+    bottomLeft: 0,
+    linked: true,
+  }
+}
+
+export function defaultImageChrome(): ImageChrome {
+  return {
+    visible: true,
     widthMode: "max",
-    widthPx: 320,
-    sizePreset: "fill",
+    widthPx: 600,
+    heightMode: "auto",
+    heightPx: 180,
     align: "center",
     vAlign: "middle",
-    fit: "cover",
-    corners: "soft",
-    padding: "none",
-    fill: "none",
-    visible: true,
-    device: "all",
+    corners: zeroCorners(),
+    padding: zeroQuad(),
+    margin: zeroQuad(),
+    borderEnabled: false,
+    border: { width: 1, style: "solid", color: "#171717" },
+    background: "none",
+    backgroundColor: "#F4F4F5",
+  }
+}
+
+export function cloneChrome(chrome: ImageChrome): ImageChrome {
+  return {
+    ...chrome,
+    corners: { ...chrome.corners },
+    padding: { ...chrome.padding },
+    margin: { ...chrome.margin },
+    border: { ...chrome.border },
+  }
+}
+
+export function defaultImagePrototype(): ImagePrototypeState {
+  const chrome = defaultImageChrome()
+  return {
+    sourceMode: "upload",
+    source: "landscape",
+    imageUrl: "",
+    alt: "Wool beanie",
+    href: "",
+    openInNewTab: false,
+    dynamicContent: false,
+    device: "desktop",
+    desktop: chrome,
+    mobile: { ...cloneChrome(chrome), widthPx: 320 },
+  }
+}
+
+export function activeChrome(state: ImagePrototypeState): ImageChrome {
+  switch (state.device) {
+    case "desktop":
+      return state.desktop
+    case "mobile":
+      return state.mobile
+    default: {
+      const exhaustive: never = state.device
+      throw new Error(`Unhandled device: ${exhaustive}`)
+    }
+  }
+}
+
+export function patchChrome(
+  state: ImagePrototypeState,
+  patch: Partial<ImageChrome>
+): ImagePrototypeState {
+  switch (state.device) {
+    case "desktop":
+      return { ...state, desktop: { ...state.desktop, ...patch } }
+    case "mobile":
+      return { ...state, mobile: { ...state.mobile, ...patch } }
+    default: {
+      const exhaustive: never = state.device
+      throw new Error(`Unhandled device: ${exhaustive}`)
+    }
+  }
+}
+
+export function setQuad(quad: Quad, edge: QuadEdge, value: number): Quad {
+  if (quad.linked) {
+    return {
+      top: value,
+      right: value,
+      bottom: value,
+      left: value,
+      linked: true,
+    }
+  }
+  switch (edge) {
+    case "top":
+      return { ...quad, top: value }
+    case "right":
+      return { ...quad, right: value }
+    case "bottom":
+      return { ...quad, bottom: value }
+    case "left":
+      return { ...quad, left: value }
+    default: {
+      const exhaustive: never = edge
+      throw new Error(`Unhandled edge: ${exhaustive}`)
+    }
+  }
+}
+
+export function toggleQuadLink(quad: Quad): Quad {
+  if (quad.linked) return { ...quad, linked: false }
+  return {
+    top: quad.top,
+    right: quad.top,
+    bottom: quad.top,
+    left: quad.top,
+    linked: true,
+  }
+}
+
+export function setCorner(
+  corners: Corners,
+  edge: CornerEdge,
+  value: number
+): Corners {
+  if (corners.linked) {
+    return {
+      topLeft: value,
+      topRight: value,
+      bottomRight: value,
+      bottomLeft: value,
+      linked: true,
+    }
+  }
+  switch (edge) {
+    case "topLeft":
+      return { ...corners, topLeft: value }
+    case "topRight":
+      return { ...corners, topRight: value }
+    case "bottomRight":
+      return { ...corners, bottomRight: value }
+    case "bottomLeft":
+      return { ...corners, bottomLeft: value }
+    default: {
+      const exhaustive: never = edge
+      throw new Error(`Unhandled corner: ${exhaustive}`)
+    }
+  }
+}
+
+export function toggleCornerLink(corners: Corners): Corners {
+  if (corners.linked) return { ...corners, linked: false }
+  return {
+    topLeft: corners.topLeft,
+    topRight: corners.topLeft,
+    bottomRight: corners.topLeft,
+    bottomLeft: corners.topLeft,
+    linked: true,
   }
 }
 
@@ -76,6 +265,8 @@ export function intrinsicWidth(source: ImageSource): number {
       return 240
     case "portrait":
       return 160
+    case "icon":
+      return 64
     default: {
       const exhaustive: never = source
       throw new Error(`Unhandled image source: ${exhaustive}`)
@@ -83,51 +274,69 @@ export function intrinsicWidth(source: ImageSource): number {
   }
 }
 
-export function cornerRadius(corners: CornerPreset): string {
-  switch (corners) {
-    case "none":
-      return "0px"
-    case "soft":
-      return "6px"
-    case "round":
-      return "12px"
-    case "pill":
-      return "999px"
+export function displayedWidth(chrome: ImageChrome, source: ImageSource): number {
+  return chrome.widthMode === "auto" ? intrinsicWidth(source) : chrome.widthPx
+}
+
+export function previewBox(
+  chrome: ImageChrome,
+  source: ImageSource
+): { width: string; maxWidth: string; height: string; maxHeight: string } {
+  const width = widthBox(chrome, source)
+  switch (chrome.heightMode) {
+    case "auto":
+      return { ...width, height: "auto", maxHeight: "none" }
+    case "fixed":
+      return { ...width, height: `${chrome.heightPx}px`, maxHeight: "none" }
+    case "max":
+      return { ...width, height: "auto", maxHeight: `${chrome.heightPx}px` }
     default: {
-      const exhaustive: never = corners
-      throw new Error(`Unhandled corner preset: ${exhaustive}`)
+      const exhaustive: never = chrome.heightMode
+      throw new Error(`Unhandled height mode: ${exhaustive}`)
     }
   }
 }
 
-export function paddingClass(padding: Spacing): string {
-  switch (padding) {
-    case "none":
-      return "p-0"
-    case "sm":
-      return "p-2"
-    case "md":
-      return "p-3"
-    case "lg":
-      return "p-5"
+function widthBox(
+  chrome: ImageChrome,
+  source: ImageSource
+): { width: string; maxWidth: string } {
+  switch (chrome.widthMode) {
+    case "auto":
+      return {
+        width: `${intrinsicWidth(source)}px`,
+        maxWidth: "100%",
+      }
+    case "fixed":
+      return { width: `${chrome.widthPx}px`, maxWidth: "100%" }
+    case "max":
+      return { width: "100%", maxWidth: `${chrome.widthPx}px` }
     default: {
-      const exhaustive: never = padding
-      throw new Error(`Unhandled padding: ${exhaustive}`)
+      const exhaustive: never = chrome.widthMode
+      throw new Error(`Unhandled width mode: ${exhaustive}`)
     }
   }
 }
 
-export function fillClass(fill: BlockBg): string {
-  switch (fill) {
-    case "none":
-      return "bg-transparent"
-    case "muted":
-      return "bg-muted"
-    case "accent":
-      return "bg-accent"
+export function cornerCss(corners: Corners): string {
+  return `${corners.topLeft}px ${corners.topRight}px ${corners.bottomRight}px ${corners.bottomLeft}px`
+}
+
+export function quadCss(quad: Quad): string {
+  return `${quad.top}px ${quad.right}px ${quad.bottom}px ${quad.left}px`
+}
+
+export function resolvedSrc(state: ImagePrototypeState): string {
+  switch (state.sourceMode) {
+    case "url":
+      return state.imageUrl.trim() || SOURCE_SRC[state.source]
+    case "upload":
+      return SOURCE_SRC[state.source]
+    case "icons":
+      return SOURCE_SRC.icon
     default: {
-      const exhaustive: never = fill
-      throw new Error(`Unhandled fill: ${exhaustive}`)
+      const exhaustive: never = state.sourceMode
+      throw new Error(`Unhandled source mode: ${exhaustive}`)
     }
   }
 }
@@ -162,54 +371,4 @@ export function justifyContent(
       throw new Error(`Unhandled align: ${exhaustive}`)
     }
   }
-}
-
-export function previewWidth(
-  state: ImagePrototypeState,
-  sizing: SizingModel
-): { width: string; maxWidth: string } {
-  if (sizing === "preset") {
-    switch (state.sizePreset) {
-      case "hug":
-        return {
-          width: `${intrinsicWidth(state.source)}px`,
-          maxWidth: "100%",
-        }
-      case "half":
-        return { width: "50%", maxWidth: "100%" }
-      case "fill":
-        return { width: "100%", maxWidth: "100%" }
-      default: {
-        const exhaustive: never = state.sizePreset
-        throw new Error(`Unhandled size preset: ${exhaustive}`)
-      }
-    }
-  }
-
-  switch (state.widthMode) {
-    case "auto":
-      return {
-        width: `${intrinsicWidth(state.source)}px`,
-        maxWidth: "100%",
-      }
-    case "fixed":
-      return { width: `${state.widthPx}px`, maxWidth: "100%" }
-    case "max":
-      return { width: "100%", maxWidth: `${state.widthPx}px` }
-    default: {
-      const exhaustive: never = state.widthMode
-      throw new Error(`Unhandled width mode: ${exhaustive}`)
-    }
-  }
-}
-
-export function displayedWidth(state: ImagePrototypeState): number {
-  return state.widthMode === "auto"
-    ? intrinsicWidth(state.source)
-    : state.widthPx
-}
-
-export function imageAlt(state: ImagePrototypeState): string {
-  if (state.decorative) return ""
-  return state.alt
 }

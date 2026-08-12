@@ -20,10 +20,8 @@ function PrototypesPage() {
             </Badge>
           </div>
           <p className="max-w-2xl text-body text-muted-foreground">
-            Inspector studies for the email editor. Discrete choices are
-            toggle groups. Text fields stay for values that are actually
-            text. Image is first because tabular.email already solved most
-            of this block.
+            Inspector studies for the email editor. Fluid chrome, Tabular's
+            Image control set.
           </p>
         </header>
 
@@ -31,11 +29,10 @@ function PrototypesPage() {
           <div className="flex flex-col gap-1.5">
             <h2 className="text-title font-medium tracking-tight">Image</h2>
             <p className="max-w-2xl text-caption text-muted-foreground">
-              Tabular puts AUTO / FIXED / MAX beside width, alignment on
-              icon groups, and visibility on an eye pair. Interior's rule
-              for this kind of control: equal-width segments, and fields
-              that can turn off stay mounted so the panel does not jump.
-              Alt and URL are the only strings.
+              Source (file, URL, icon), alt, click-through link, new tab,
+              dynamic content. On styles: desktop/mobile, visibility, AUTO /
+              FIXED / MAX width and height, align, linked corner radius,
+              four-sided padding and margin, border, and background.
             </p>
           </div>
           <ImagePrototypeGallery />
