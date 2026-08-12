@@ -344,7 +344,7 @@ function ImagePanel({
   return (
     <SizeProvider size="compact">
       <aside className="flex max-h-[28rem] w-full shrink-0 flex-col overflow-auto border-t border-border bg-card lg:max-h-none lg:w-[15.5rem] lg:border-t-0 lg:border-l">
-        <header className="flex items-center gap-2 border-b border-border px-3 py-2">
+        <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-card px-3 py-2">
           <span className="flex h-8 w-8 shrink-0 overflow-hidden rounded-md bg-muted">
             <img
               src={resolvedSrc(state)}
@@ -579,9 +579,7 @@ function ImagePanel({
               : undefined
           }
         >
-          {chrome.background === "none" ? (
-            <p className="text-[11px] text-muted-foreground">None</p>
-          ) : (
+          {chrome.background === "none" ? null : (
             <AppearanceRow
               color={chrome.backgroundColor}
               onColorChange={(backgroundColor) =>
@@ -625,9 +623,7 @@ function ImagePanel({
                 }
               />
             </AppearanceRow>
-          ) : (
-            <p className="text-[11px] text-muted-foreground">None</p>
-          )}
+          ) : null}
         </FigSection>
 
         <FigSection title="Spacing">
