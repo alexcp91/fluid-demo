@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   Mail,
+  PanelRight,
   Settings,
   type LucideIcon,
 } from "lucide-react"
@@ -13,7 +14,13 @@ import { cn } from "@/lib/utils"
 import { SizeProvider } from "@/lib/size-context"
 
 interface NavItem {
-  to: "/" | "/email-editor" | "/email-templates" | "/settings" | "/components"
+  to:
+    | "/"
+    | "/email-editor"
+    | "/email-templates"
+    | "/settings"
+    | "/components"
+    | "/prototypes"
   label: string
   icon: LucideIcon
 }
@@ -22,6 +29,7 @@ const NAV: NavItem[] = [
   { to: "/", label: "Home", icon: LayoutDashboard },
   { to: "/email-templates", label: "Email templates", icon: LayoutTemplate },
   { to: "/email-editor", label: "Email editor", icon: Mail },
+  { to: "/prototypes", label: "Prototypes", icon: PanelRight },
   { to: "/components", label: "Components", icon: Boxes },
   { to: "/settings", label: "Settings", icon: Settings },
 ]
@@ -79,6 +87,11 @@ export function AppSidebar() {
                 {item.to === "/email-editor" && (
                   <Badge variant="dot" color="blue">
                     Live
+                  </Badge>
+                )}
+                {item.to === "/prototypes" && (
+                  <Badge variant="dot" color="amber">
+                    Lab
                   </Badge>
                 )}
                 {item.to === "/components" && (

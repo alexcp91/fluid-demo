@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ComponentsRouteImport } from './routes/components'
 import { Route as EmailEditorRouteImport } from './routes/email-editor'
 import { Route as EmailTemplatesRouteImport } from './routes/email-templates'
+import { Route as PrototypesRouteImport } from './routes/prototypes'
 import { Route as SettingsRouteImport } from './routes/settings'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const EmailTemplatesRoute = EmailTemplatesRouteImport.update({
   path: '/email-templates',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrototypesRoute = PrototypesRouteImport.update({
+  id: '/prototypes',
+  path: '/prototypes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/components': typeof ComponentsRoute
   '/email-editor': typeof EmailEditorRoute
   '/email-templates': typeof EmailTemplatesRoute
+  '/prototypes': typeof PrototypesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/components': typeof ComponentsRoute
   '/email-editor': typeof EmailEditorRoute
   '/email-templates': typeof EmailTemplatesRoute
+  '/prototypes': typeof PrototypesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
@@ -61,20 +69,33 @@ export interface FileRoutesById {
   '/components': typeof ComponentsRoute
   '/email-editor': typeof EmailEditorRoute
   '/email-templates': typeof EmailTemplatesRoute
+  '/prototypes': typeof PrototypesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/components' | '/email-editor' | '/email-templates' | '/settings'
+    | '/'
+    | '/components'
+    | '/email-editor'
+    | '/email-templates'
+    | '/prototypes'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/components' | '/email-editor' | '/email-templates' | '/settings'
+  to:
+    | '/'
+    | '/components'
+    | '/email-editor'
+    | '/email-templates'
+    | '/prototypes'
+    | '/settings'
   id:
     | '__root__'
     | '/'
     | '/components'
     | '/email-editor'
     | '/email-templates'
+    | '/prototypes'
     | '/settings'
   fileRoutesById: FileRoutesById
 }
@@ -83,6 +104,7 @@ export interface RootRouteChildren {
   ComponentsRoute: typeof ComponentsRoute
   EmailEditorRoute: typeof EmailEditorRoute
   EmailTemplatesRoute: typeof EmailTemplatesRoute
+  PrototypesRoute: typeof PrototypesRoute
   SettingsRoute: typeof SettingsRoute
 }
 
@@ -116,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmailTemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prototypes': {
+      id: '/prototypes'
+      path: '/prototypes'
+      fullPath: '/prototypes'
+      preLoaderRoute: typeof PrototypesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -131,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComponentsRoute: ComponentsRoute,
   EmailEditorRoute: EmailEditorRoute,
   EmailTemplatesRoute: EmailTemplatesRoute,
+  PrototypesRoute: PrototypesRoute,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport

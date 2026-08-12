@@ -119,6 +119,7 @@ export function CompactField({
   placeholder,
   hint,
   index,
+  disabled,
 }: {
   label: string
   value: string
@@ -127,6 +128,7 @@ export function CompactField({
   placeholder?: string
   hint?: string
   index: number
+  disabled?: boolean
 }) {
   return (
     <div className="flex flex-col gap-1">
@@ -138,6 +140,7 @@ export function CompactField({
         value={value}
         onChange={onChange}
         placeholder={placeholder ?? label}
+        disabled={disabled}
       />
       {hint ? (
         <p className="px-2 text-caption leading-snug text-muted-foreground/80">

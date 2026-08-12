@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useEffect, useState, type ReactNode } from "react"
-import { ArrowRight, LayoutTemplate, Mail } from "lucide-react"
+import { ArrowRight, LayoutTemplate, Mail, PanelRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { EmailListItem } from "@/email/schema"
@@ -50,6 +50,12 @@ function HomePage() {
             title="Email editor"
             description="WYSIWYG canvas, layers, and a contextual inspector."
             icon={<Mail size={16} strokeWidth={1.75} />}
+          />
+          <HomeLink
+            to="/prototypes"
+            title="Prototypes"
+            description="Control panel studies. Image first, toggle groups for most choices."
+            icon={<PanelRight size={16} strokeWidth={1.75} />}
           />
           <HomeLink
             to="/components"
@@ -129,7 +135,12 @@ function HomeLink({
   icon,
   badge,
 }: {
-  to: "/email-templates" | "/email-editor" | "/components" | "/settings"
+  to:
+    | "/email-templates"
+    | "/email-editor"
+    | "/prototypes"
+    | "/components"
+    | "/settings"
   title: string
   description: string
   icon?: ReactNode
