@@ -6,41 +6,34 @@ import {
   AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd,
   AlignVerticalJustifyStart,
-  Braces,
-  Circle,
-  ExternalLink,
+  Droplet,
   Eye,
   EyeOff,
   ImageIcon,
+  LayoutTemplate,
   Link2,
+  Monitor,
   Plus,
-  Square,
-  Squircle,
-  X,
+  Smartphone,
+  Type,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ColorPickerPopover } from "@/components/ui/color-picker"
-import { Tooltip } from "@/components/ui/tooltip"
+import { Tabs, TabsList, TabItem, TabPanel } from "@/components/ui/tabs"
 import {
   CompactField,
   IconToggleGroup,
   InspectorFields,
+  InspectorSection,
+  PropRow,
   SegmentGroup,
   type SegOption,
 } from "@/components/email-editor/inspector-controls"
 import { SizeProvider } from "@/lib/size-context"
 import { useShape } from "@/lib/shape-context"
-import { useSize } from "@/lib/size-context"
 import { cn } from "@/lib/utils"
-import { DimField, IndependentToggle, MiniPx } from "./image-fields"
-import {
-  applyShapePreset,
-  matchShapePreset,
-  matchSizePreset,
-  applySizePreset,
-  type ShapeChoice,
-  type SizePreset,
-} from "./image-presets"
+import { CornerGrid, NumStepper, QuadRow } from "./image-fields"
 import {
   SOURCE_BYTES,
   SOURCE_LABEL,
@@ -60,44 +53,53 @@ import {
   toggleCornerLink,
   toggleQuadLink,
   type BackgroundKind,
+  type BorderStyle,
   type ImageChrome,
   type ImagePrototypeState,
   type ImageSource,
   type SizeMode,
+  type SourceMode,
 } from "./image-state"
 
-const FILE_OPTIONS: SegOption<ImageSource>[] = [
+type Density = "core" | "plus" | "full"
+
+const SOURCE_MODE_OPTIONS: SegOption<SourceMode>[] = [
+  { value: "upload", label: "File" },
+  { value: "url", label: "URL" },
+  { value: "icons", label: "Icon" },
+]
+
+const CORE_FILE_OPTIONS: SegOption<ImageSource>[] = [
   { value: "landscape", label: "Photo" },
   { value: "portrait", label: "Tall" },
   { value: "icon", label: "Icon" },
 ]
 
-const SIZE_PRESET_OPTIONS: SegOption<SizePreset>[] = [
-  { value: "auto", label: "Hug" },
-  { value: "fill", label: "Fill" },
-  { value: "fixed", label: "Fixed" },
+const UPLOAD_FILE_OPTIONS: SegOption<ImageSource>[] = [
+  { value: "landscape", label: "Photo" },
+  { value: "portrait", label: "Tall" },
 ]
 
-const HEIGHT_MODE_OPTIONS: SegOption<SizeMode>[] = [
-  { value: "auto", label: "Hug" },
-  { value: "fixed", label: "Fixed" },
-  { value: "max", label: "Max" },
+const SIZE_MODE_OPTIONS: SegOption<SizeMode>[] = [
+  { value: "auto", label: "AUTO" },
+  { value: "fixed", label: "FIXED" },
+  { value: "max", label: "MAX" },
 ]
 
 const ALIGN_OPTIONS: SegOption<ImageChrome["align"]>[] = [
-  { value: "left", icon: AlignLeft, title: "Left" },
-  { value: "center", icon: AlignCenter, title: "Center" },
-  { value: "right", icon: AlignRight, title: "Right" },
+  { value: "left", icon: AlignLeft, title: "Align left" },
+  { value: "center", icon: AlignCenter, title: "Align center" },
+  { value: "right", icon: AlignRight, title: "Align right" },
 ]
 
 const VALIGN_OPTIONS: SegOption<ImageChrome["vAlign"]>[] = [
-  { value: "top", icon: AlignVerticalJustifyStart, title: "Top" },
+  { value: "top", icon: AlignVerticalJustifyStart, title: "Align top" },
   {
     value: "middle",
     icon: AlignVerticalJustifyCenter,
-    title: "Middle",
+    title: "Align middle",
   },
-  { value: "bottom", icon: AlignVerticalJustifyEnd, title: "Bottom" },
+  { value: "bottom", icon: AlignVerticalJustifyEnd, title: "Align bottom" },
 ]
 
 const VISIBILITY_OPTIONS: SegOption<"shown" | "hidden">[] = [
@@ -105,10 +107,31 @@ const VISIBILITY_OPTIONS: SegOption<"shown" | "hidden">[] = [
   { value: "hidden", icon: EyeOff, title: "Hidden" },
 ]
 
-const SHAPE_OPTIONS: SegOption<ShapeChoice>[] = [
-  { value: "square", icon: Square, title: "Square" },
-  { value: "rounded", icon: Squircle, title: "Rounded" },
-  { value: "circle", icon: Circle, title: "Circle" },
+const DEVICE_OPTIONS: SegOption<ImagePrototypeState["device"]>[] = [
+  { value: "desktop", icon: Monitor, title: "Desktop" },
+  { value: "mobile", icon: Smartphone, title: "Mobile" },
+]
+
+const ON_OFF: SegOption<"off" | "on">[] = [
+  { value: "off", label: "Off" },
+  { value: "on", label: "On" },
+]
+
+const BORDER_STYLE_OPTIONS: SegOption<BorderStyle>[] = [
+  { value: "solid", label: "Solid" },
+  { value: "dashed", label: "Dash" },
+  { value: "dotted", label: "Dot" },
+]
+
+const BACKGROUND_OPTIONS: SegOption<BackgroundKind>[] = [
+  { value: "none", label: "None" },
+  { value: "color", label: "Color" },
+  { value: "image", label: "Image" },
+]
+
+const BACKGROUND_SIMPLE: SegOption<BackgroundKind>[] = [
+  { value: "none", label: "None" },
+  { value: "color", label: "Color" },
 ]
 
 function useImagePrototype() {
@@ -122,51 +145,19 @@ function useImagePrototype() {
   return [state, patch, patchActive] as const
 }
 
-function FigSection({
-  title,
-  onAdd,
-  addLabel,
-  children,
+function ImagePreview({
+  state,
+  density,
 }: {
-  title: string
-  onAdd?: () => void
-  addLabel?: string
-  children?: ReactNode
+  state: ImagePrototypeState
+  density: Density
 }) {
-  return (
-    <section className="border-b border-border/60 px-3 py-2 last:border-b-0">
-      <div className="mb-1 flex h-6 items-center">
-        <h4 className="min-w-0 flex-1 text-[11px] font-medium tracking-wide text-muted-foreground">
-          {title}
-        </h4>
-        {onAdd ? (
-          <Tooltip content={addLabel ?? `Add ${title}`} side="bottom">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-compact"
-              aria-label={addLabel ?? `Add ${title}`}
-              onClick={onAdd}
-              className="h-6 w-6"
-            >
-              <Plus size={14} strokeWidth={1.5} />
-            </Button>
-          </Tooltip>
-        ) : null}
-      </div>
-      {children ? (
-        <div className="flex flex-col gap-1">{children}</div>
-      ) : null}
-    </section>
-  )
-}
-
-function ImagePreview({ state }: { state: ImagePrototypeState }) {
   const shape = useShape()
   const chrome = activeChrome(state)
   const box = previewBox(chrome, state.source)
   const src = resolvedSrc(state)
   const linked = state.href.trim().length > 0
+  const canvasWidth = state.device === "mobile" ? "17rem" : "22rem"
 
   const blockStyle: CSSProperties = {
     width: box.width,
@@ -199,7 +190,7 @@ function ImagePreview({ state }: { state: ImagePrototypeState }) {
           "mx-auto flex w-full flex-1 flex-col bg-card shadow-surface-3",
           shape.container
         )}
-        style={{ maxWidth: "22rem" }}
+        style={{ maxWidth: canvasWidth }}
       >
         <div
           className="flex min-h-[14rem] flex-1"
@@ -220,170 +211,135 @@ function ImagePreview({ state }: { state: ImagePrototypeState }) {
             />
           </figure>
         </div>
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-3 py-2">
+          <Badge variant="dot" color={chrome.visible ? "green" : "gray"}>
+            {chrome.visible ? "Shown" : "Hidden"}
+          </Badge>
+          {density === "full" ? (
+            <Badge variant="dot" color="gray">
+              {state.device === "mobile" ? "Mobile" : "Desktop"}
+            </Badge>
+          ) : null}
+          <Badge variant="dot" color="gray">
+            {sizeModeLabel(
+              chrome.widthMode,
+              displayedWidth(chrome, state.source)
+            )}
+          </Badge>
+          {linked ? (
+            <Badge variant="dot" color="blue">
+              {state.openInNewTab ? "Link · new tab" : "Link"}
+            </Badge>
+          ) : null}
+          {state.dynamicContent ? (
+            <Badge variant="dot" color="violet">
+              Dynamic
+            </Badge>
+          ) : null}
+        </div>
       </div>
     </div>
   )
 }
 
-function AppearanceRow({
-  color,
-  onColorChange,
-  onRemove,
-  children,
-}: {
-  color: string
-  onColorChange: (next: string) => void
-  onRemove: () => void
-  children?: ReactNode
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      <ColorPickerPopover
-        value={color}
-        onValueChange={onColorChange}
-        triggerShowValue
-        size="compact"
-        triggerClassName="min-w-0 flex-1 justify-start"
-      />
-      {children}
-      <Tooltip content="Remove" side="bottom">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-compact"
-          aria-label="Remove"
-          onClick={onRemove}
-          className="h-7 w-7 shrink-0"
-        >
-          <X size={14} strokeWidth={1.5} />
-        </Button>
-      </Tooltip>
-    </div>
-  )
-}
-
-function PaddingEditor({
-  value,
-  onEdgeChange,
-  onToggleLink,
-}: {
-  value: ImageChrome["padding"]
-  onEdgeChange: (edge: "top" | "right" | "bottom" | "left", next: number) => void
-  onToggleLink: () => void
-}) {
-  if (value.linked) {
-    return (
-      <div className="flex items-center gap-1">
-        <DimField
-          label="P"
-          value={value.top}
-          min={0}
-          max={80}
-          onChange={(next) => onEdgeChange("top", next)}
-        />
-        <IndependentToggle
-          kind="padding"
-          linked={value.linked}
-          onToggle={onToggleLink}
-        />
-      </div>
-    )
+function sizeModeLabel(mode: SizeMode, px: number): string {
+  switch (mode) {
+    case "auto":
+      return `AUTO ${px}`
+    case "fixed":
+      return `FIXED ${px}`
+    case "max":
+      return `MAX ${px}`
+    default: {
+      const exhaustive: never = mode
+      throw new Error(`Unhandled size mode: ${exhaustive}`)
+    }
   }
+}
 
+function FileMeta({ source }: { source: ImageSource }) {
   return (
-    <div className="flex items-start gap-1">
-      <div className="grid flex-1 grid-cols-3 grid-rows-3 gap-0.5">
-        <span />
-        <MiniPx
-          label="Padding top"
-          value={value.top}
-          onChange={(next) => onEdgeChange("top", next)}
+    <div className="flex items-center gap-2 px-0.5 py-0.5">
+      <span className="flex h-8 w-8 shrink-0 overflow-hidden rounded-md bg-muted">
+        <img
+          src={SOURCE_SRC[source]}
+          alt=""
+          className="h-full w-full object-cover"
         />
-        <span />
-        <MiniPx
-          label="Padding left"
-          value={value.left}
-          onChange={(next) => onEdgeChange("left", next)}
-        />
-        <span className="bg-muted/40" />
-        <MiniPx
-          label="Padding right"
-          value={value.right}
-          onChange={(next) => onEdgeChange("right", next)}
-        />
-        <span />
-        <MiniPx
-          label="Padding bottom"
-          value={value.bottom}
-          onChange={(next) => onEdgeChange("bottom", next)}
-        />
-        <span />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-caption font-medium text-foreground">
+          {SOURCE_LABEL[source]}
+        </p>
+        <p className="text-[11px] text-muted-foreground">
+          {SOURCE_BYTES[source]}
+        </p>
       </div>
-      <IndependentToggle
-        kind="padding"
-        linked={value.linked}
-        onToggle={onToggleLink}
+      <ImageIcon
+        size={14}
+        strokeWidth={1.5}
+        className="text-muted-foreground"
       />
     </div>
   )
 }
 
-function ImagePanel({
+function SourceSection({
   state,
   onPatch,
-  onPatchChrome,
+  density,
 }: {
   state: ImagePrototypeState
   onPatch: (next: Partial<ImagePrototypeState>) => void
-  onPatchChrome: (next: Partial<ImageChrome>) => void
+  density: Density
 }) {
-  const chrome = activeChrome(state)
-  const shapeChoice = matchShapePreset(chrome.corners)
-  const [urlOpen, setUrlOpen] = useState(state.sourceMode === "url")
+  const uploadSource = state.source === "icon" ? "landscape" : state.source
 
   return (
-    <SizeProvider size="compact">
-      <aside className="flex max-h-[28rem] w-full shrink-0 flex-col overflow-auto border-t border-border bg-card lg:max-h-none lg:w-[15.5rem] lg:border-t-0 lg:border-l">
-        <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-card px-3 py-2">
-          <span className="flex h-8 w-8 shrink-0 overflow-hidden rounded-md bg-muted">
-            <img
-              src={resolvedSrc(state)}
-              alt=""
-              className="h-full w-full object-cover"
+    <InspectorSection title="Image" icon={ImageIcon}>
+      {density === "core" ? (
+        <>
+          <PropRow label="File">
+            <SegmentGroup
+              value={state.source}
+              onChange={(source) => onPatch({ source, sourceMode: "upload" })}
+              options={CORE_FILE_OPTIONS}
             />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[12px] font-medium text-foreground">
-              {SOURCE_LABEL[state.source]}
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              {SOURCE_BYTES[state.source]}
-            </p>
-          </div>
-          <Tooltip content={urlOpen ? "Use file" : "From URL"} side="bottom">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-compact"
-              active={urlOpen}
-              aria-pressed={urlOpen}
-              aria-label={urlOpen ? "Use file" : "From URL"}
-              onClick={() => {
-                const next = !urlOpen
-                setUrlOpen(next)
-                onPatch({
-                  sourceMode: next ? "url" : "upload",
-                })
+          </PropRow>
+          <FileMeta source={state.source} />
+        </>
+      ) : (
+        <>
+          <PropRow label="Source">
+            <SegmentGroup
+              value={state.sourceMode}
+              onChange={(sourceMode) => {
+                if (sourceMode === "icons") {
+                  onPatch({ sourceMode, source: "icon" })
+                  return
+                }
+                if (state.source === "icon") {
+                  onPatch({ sourceMode, source: "landscape" })
+                  return
+                }
+                onPatch({ sourceMode })
               }}
-              className="h-7 w-7"
-            >
-              <Link2 size={14} strokeWidth={urlOpen ? 2 : 1.5} />
-            </Button>
-          </Tooltip>
-        </header>
-
-        <div className="px-3 py-2">
-          {urlOpen ? (
+              options={SOURCE_MODE_OPTIONS}
+            />
+          </PropRow>
+          {state.sourceMode === "upload" ? (
+            <>
+              <PropRow label="File">
+                <SegmentGroup
+                  value={uploadSource}
+                  onChange={(source) => onPatch({ source })}
+                  options={UPLOAD_FILE_OPTIONS}
+                />
+              </PropRow>
+              <FileMeta source={state.source} />
+            </>
+          ) : null}
+          {state.sourceMode === "url" ? (
             <InspectorFields>
               <CompactField
                 index={0}
@@ -394,240 +350,181 @@ function ImagePanel({
                 placeholder="https://"
               />
             </InspectorFields>
-          ) : (
-            <SegmentGroup
-              value={state.source}
-              onChange={(source) => onPatch({ source, sourceMode: "upload" })}
-              options={FILE_OPTIONS}
-            />
-          )}
-        </div>
-
-        <FigSection title="Content">
-          <InspectorFields>
-            <CompactField
-              index={0}
-              label="Alt text"
-              value={state.alt}
-              onChange={(alt) => onPatch({ alt })}
-              placeholder="Alt text"
-            />
-            <CompactField
-              index={1}
-              label="Link URL"
-              icon={Link2}
-              value={state.href}
-              onChange={(href) => onPatch({ href })}
-              placeholder="Link"
-            />
-          </InspectorFields>
-          <div className="flex justify-end gap-0.5">
-            <Tooltip content="Dynamic content" side="bottom">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-compact"
-                active={state.dynamicContent}
-                aria-pressed={state.dynamicContent}
-                aria-label="Dynamic content"
-                onClick={() =>
-                  onPatch({ dynamicContent: !state.dynamicContent })
-                }
-                className="h-7 w-7"
-              >
-                <Braces
-                  size={14}
-                  strokeWidth={state.dynamicContent ? 2 : 1.5}
-                />
-              </Button>
-            </Tooltip>
-            <Tooltip content="Open in new tab" side="bottom">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-compact"
-                active={state.openInNewTab}
-                disabled={!state.href.trim()}
-                aria-pressed={state.openInNewTab}
-                aria-label="Open in new tab"
-                onClick={() => onPatch({ openInNewTab: !state.openInNewTab })}
-                className="h-7 w-7"
-              >
-                <ExternalLink
-                  size={14}
-                  strokeWidth={state.openInNewTab ? 2 : 1.5}
-                />
-              </Button>
-            </Tooltip>
-          </div>
-        </FigSection>
-
-        <FigSection title="Layout">
-          <div className="flex items-center justify-between gap-1">
-            <IconToggleGroup
-              value={chrome.align}
-              onChange={(align) => onPatchChrome({ align })}
-              options={ALIGN_OPTIONS}
-            />
-            <IconToggleGroup
-              value={chrome.vAlign}
-              onChange={(vAlign) => onPatchChrome({ vAlign })}
-              options={VALIGN_OPTIONS}
-            />
-            <IconToggleGroup
-              value={chrome.visible ? "shown" : "hidden"}
-              onChange={(value) =>
-                onPatchChrome({ visible: value === "shown" })
-              }
-              options={VISIBILITY_OPTIONS}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-1">
-            <DimField
-              label="W"
-              value={displayedWidth(chrome, state.source)}
-              disabled={chrome.widthMode === "auto"}
-              onChange={(widthPx) => onPatchChrome({ widthPx })}
-            />
-            <DimField
-              label="H"
-              value={chrome.heightPx}
-              disabled={chrome.heightMode === "auto"}
-              min={40}
-              onChange={(heightPx) =>
-                onPatchChrome({ heightPx, heightMode: "fixed" })
-              }
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-1">
-            <SegmentGroup
-              value={matchSizePreset(chrome.widthMode)}
-              onChange={(preset) => onPatchChrome(applySizePreset(preset))}
-              options={SIZE_PRESET_OPTIONS}
-            />
-            <SegmentGroup
-              value={chrome.heightMode}
-              onChange={(heightMode) => onPatchChrome({ heightMode })}
-              options={HEIGHT_MODE_OPTIONS}
-            />
-          </div>
-        </FigSection>
-
-        <FigSection title="Appearance">
-          <div className="flex items-center gap-1">
-            <IconToggleGroup
-              value={shapeChoice}
-              onChange={(preset) => {
-                if (preset === "custom") return
-                onPatchChrome({ corners: applyShapePreset(preset) })
-              }}
-              options={SHAPE_OPTIONS}
-            />
-            <DimField
-              label="R"
-              value={chrome.corners.topLeft}
-              min={0}
-              max={120}
-              onChange={(next) =>
-                onPatchChrome({
-                  corners: setCorner(chrome.corners, "topLeft", next),
-                })
-              }
-            />
-            <IndependentToggle
-              kind="corners"
-              linked={chrome.corners.linked}
-              onToggle={() =>
-                onPatchChrome({
-                  corners: toggleCornerLink(chrome.corners),
-                })
-              }
-            />
-          </div>
-          {chrome.corners.linked ? null : (
-            <div className="grid grid-cols-2 gap-1 pl-0.5">
-              {(
-                [
-                  ["topLeft", "TL"],
-                  ["topRight", "TR"],
-                  ["bottomLeft", "BL"],
-                  ["bottomRight", "BR"],
-                ] as const
-              ).map(([edge, label]) => (
-                <DimField
-                  key={edge}
-                  label={label}
-                  value={chrome.corners[edge]}
-                  min={0}
-                  max={120}
-                  onChange={(next) =>
-                    onPatchChrome({
-                      corners: setCorner(chrome.corners, edge, next),
-                    })
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </FigSection>
-
-        <FigSection
-          title="Fill"
-          onAdd={
-            chrome.background === "none"
-              ? () => onPatchChrome({ background: "color" })
-              : undefined
-          }
-        >
-          {chrome.background === "none" ? null : (
-            <AppearanceRow
-              color={chrome.backgroundColor}
-              onColorChange={(backgroundColor) =>
-                onPatchChrome({ backgroundColor, background: "color" })
-              }
-              onRemove={() => onPatchChrome({ background: "none" })}
-            >
-              <FillTypeToggle
-                value={chrome.background}
-                onChange={(background) => onPatchChrome({ background })}
-              />
-            </AppearanceRow>
-          )}
-        </FigSection>
-
-        <FigSection
-          title="Stroke"
-          onAdd={
-            chrome.borderEnabled
-              ? undefined
-              : () => onPatchChrome({ borderEnabled: true })
-          }
-        >
-          {chrome.borderEnabled ? (
-            <AppearanceRow
-              color={chrome.border.color}
-              onColorChange={(color) =>
-                onPatchChrome({
-                  border: { ...chrome.border, color },
-                })
-              }
-              onRemove={() => onPatchChrome({ borderEnabled: false })}
-            >
-              <DimField
-                label="W"
-                value={chrome.border.width}
-                min={1}
-                max={16}
-                onChange={(width) =>
-                  onPatchChrome({ border: { ...chrome.border, width } })
-                }
-              />
-            </AppearanceRow>
           ) : null}
-        </FigSection>
+          {state.sourceMode === "icons" ? <FileMeta source="icon" /> : null}
+        </>
+      )}
+    </InspectorSection>
+  )
+}
 
-        <FigSection title="Spacing">
-          <PaddingEditor
+function ContentSection({
+  state,
+  onPatch,
+  density,
+}: {
+  state: ImagePrototypeState
+  onPatch: (next: Partial<ImagePrototypeState>) => void
+  density: Density
+}) {
+  return (
+    <InspectorSection title="Content" icon={Type}>
+      <InspectorFields>
+        <CompactField
+          index={0}
+          label="Alt text"
+          value={state.alt}
+          onChange={(alt) => onPatch({ alt })}
+          placeholder="Describe the image"
+        />
+        <CompactField
+          index={1}
+          label="Link URL"
+          icon={Link2}
+          value={state.href}
+          onChange={(href) => onPatch({ href })}
+          placeholder="https://"
+        />
+      </InspectorFields>
+      <PropRow label="New tab">
+        <SegmentGroup
+          value={state.openInNewTab ? "on" : "off"}
+          onChange={(value) => onPatch({ openInNewTab: value === "on" })}
+          options={ON_OFF}
+        />
+      </PropRow>
+      {density !== "core" ? (
+        <PropRow label="Dynamic">
+          <SegmentGroup
+            value={state.dynamicContent ? "on" : "off"}
+            onChange={(value) => onPatch({ dynamicContent: value === "on" })}
+            options={ON_OFF}
+          />
+        </PropRow>
+      ) : null}
+    </InspectorSection>
+  )
+}
+
+function LayoutSection({
+  state,
+  chrome,
+  onPatchChrome,
+}: {
+  state: ImagePrototypeState
+  chrome: ImageChrome
+  onPatchChrome: (next: Partial<ImageChrome>) => void
+}) {
+  return (
+    <InspectorSection title="Layout" icon={LayoutTemplate}>
+      <PropRow label="Visibility">
+        <IconToggleGroup
+          value={chrome.visible ? "shown" : "hidden"}
+          onChange={(value) => onPatchChrome({ visible: value === "shown" })}
+          options={VISIBILITY_OPTIONS}
+        />
+      </PropRow>
+      <PropRow label="Width">
+        <SegmentGroup
+          value={chrome.widthMode}
+          onChange={(widthMode) => onPatchChrome({ widthMode })}
+          options={SIZE_MODE_OPTIONS}
+        />
+      </PropRow>
+      <PropRow label="W">
+        <NumStepper
+          value={displayedWidth(chrome, state.source)}
+          disabled={chrome.widthMode === "auto"}
+          onChange={(widthPx) => onPatchChrome({ widthPx })}
+        />
+      </PropRow>
+      <PropRow label="Height">
+        <SegmentGroup
+          value={chrome.heightMode}
+          onChange={(heightMode) => onPatchChrome({ heightMode })}
+          options={SIZE_MODE_OPTIONS}
+        />
+      </PropRow>
+      <PropRow label="H">
+        <NumStepper
+          value={chrome.heightPx}
+          disabled={chrome.heightMode === "auto"}
+          min={40}
+          onChange={(heightPx) => onPatchChrome({ heightPx })}
+        />
+      </PropRow>
+      <PropRow label="Align">
+        <IconToggleGroup
+          value={chrome.align}
+          onChange={(align) => onPatchChrome({ align })}
+          options={ALIGN_OPTIONS}
+        />
+      </PropRow>
+      <PropRow label="Vertical">
+        <IconToggleGroup
+          value={chrome.vAlign}
+          onChange={(vAlign) => onPatchChrome({ vAlign })}
+          options={VALIGN_OPTIONS}
+        />
+      </PropRow>
+    </InspectorSection>
+  )
+}
+
+function SpacingSection({
+  chrome,
+  onPatchChrome,
+  density,
+}: {
+  chrome: ImageChrome
+  onPatchChrome: (next: Partial<ImageChrome>) => void
+  density: Density
+}) {
+  return (
+    <InspectorSection title="Spacing" icon={LayoutTemplate}>
+      <PropRow label="Radius">
+        {density === "core" ? (
+          <NumStepper
+            value={chrome.corners.topLeft}
+            min={0}
+            max={80}
+            step={2}
+            onChange={(next) =>
+              onPatchChrome({
+                corners: setCorner(chrome.corners, "topLeft", next),
+              })
+            }
+          />
+        ) : (
+          <CornerGrid
+            value={chrome.corners}
+            onCornerChange={(edge, next) =>
+              onPatchChrome({
+                corners: setCorner(chrome.corners, edge, next),
+              })
+            }
+            onToggleLink={() =>
+              onPatchChrome({ corners: toggleCornerLink(chrome.corners) })
+            }
+          />
+        )}
+      </PropRow>
+      <PropRow label="Padding">
+        {density === "core" ? (
+          <NumStepper
+            value={chrome.padding.top}
+            min={0}
+            max={80}
+            step={2}
+            onChange={(next) =>
+              onPatchChrome({
+                padding: setQuad(chrome.padding, "top", next),
+              })
+            }
+          />
+        ) : (
+          <QuadRow
+            label="Padding"
             value={chrome.padding}
             onEdgeChange={(edge, next) =>
               onPatchChrome({
@@ -638,70 +535,312 @@ function ImagePanel({
               onPatchChrome({ padding: toggleQuadLink(chrome.padding) })
             }
           />
-          <DimField
-            label="M"
+        )}
+      </PropRow>
+      <PropRow label="Margin">
+        {density === "core" ? (
+          <NumStepper
             value={chrome.margin.top}
             min={0}
             max={80}
+            step={2}
             onChange={(next) =>
               onPatchChrome({
                 margin: setQuad(chrome.margin, "top", next),
               })
             }
           />
-        </FigSection>
+        ) : (
+          <QuadRow
+            label="Margin"
+            value={chrome.margin}
+            onEdgeChange={(edge, next) =>
+              onPatchChrome({
+                margin: setQuad(chrome.margin, edge, next),
+              })
+            }
+            onToggleLink={() =>
+              onPatchChrome({ margin: toggleQuadLink(chrome.margin) })
+            }
+          />
+        )}
+      </PropRow>
+    </InspectorSection>
+  )
+}
+
+function BorderSection({
+  chrome,
+  onPatchChrome,
+}: {
+  chrome: ImageChrome
+  onPatchChrome: (next: Partial<ImageChrome>) => void
+}) {
+  return (
+    <InspectorSection title="Border" icon={LayoutTemplate}>
+      {chrome.borderEnabled ? (
+        <>
+          <PropRow label="Width">
+            <NumStepper
+              value={chrome.border.width}
+              min={1}
+              max={16}
+              step={1}
+              onChange={(width) =>
+                onPatchChrome({ border: { ...chrome.border, width } })
+              }
+            />
+          </PropRow>
+          <PropRow label="Style">
+            <SegmentGroup
+              value={chrome.border.style}
+              onChange={(style) =>
+                onPatchChrome({ border: { ...chrome.border, style } })
+              }
+              options={BORDER_STYLE_OPTIONS}
+            />
+          </PropRow>
+          <PropRow label="Color">
+            <ColorPickerPopover
+              value={chrome.border.color}
+              onValueChange={(color) =>
+                onPatchChrome({ border: { ...chrome.border, color } })
+              }
+              triggerLabel="Border"
+              triggerShowValue
+              size="compact"
+            />
+          </PropRow>
+          <PropRow label="Border">
+            <Button
+              type="button"
+              variant="ghost"
+              size="compact"
+              onClick={() => onPatchChrome({ borderEnabled: false })}
+            >
+              Remove
+            </Button>
+          </PropRow>
+        </>
+      ) : (
+        <PropRow label="Border">
+          <Button
+            type="button"
+            variant="tertiary"
+            size="compact"
+            leadingIcon={Plus}
+            onClick={() => onPatchChrome({ borderEnabled: true })}
+          >
+            Add
+          </Button>
+        </PropRow>
+      )}
+    </InspectorSection>
+  )
+}
+
+function BackgroundSection({
+  chrome,
+  onPatchChrome,
+  density,
+}: {
+  chrome: ImageChrome
+  onPatchChrome: (next: Partial<ImageChrome>) => void
+  density: Density
+}) {
+  return (
+    <InspectorSection title="Background" icon={Droplet}>
+      <PropRow label="Fill">
+        <SegmentGroup
+          value={chrome.background}
+          onChange={(background) => onPatchChrome({ background })}
+          options={
+            density === "core" ? BACKGROUND_SIMPLE : BACKGROUND_OPTIONS
+          }
+        />
+      </PropRow>
+      {chrome.background === "color" ? (
+        <PropRow label="Color">
+          <ColorPickerPopover
+            value={chrome.backgroundColor}
+            onValueChange={(backgroundColor) =>
+              onPatchChrome({ backgroundColor })
+            }
+            triggerLabel="Fill"
+            triggerShowValue
+            size="compact"
+          />
+        </PropRow>
+      ) : null}
+    </InspectorSection>
+  )
+}
+
+function PanelChrome({ children }: { children: ReactNode }) {
+  return (
+    <SizeProvider size="compact">
+      <aside className="flex max-h-[28rem] w-full shrink-0 flex-col overflow-auto border-t border-border bg-card lg:max-h-none lg:w-[18.5rem] lg:border-t-0 lg:border-l">
+        {children}
       </aside>
     </SizeProvider>
   )
 }
 
-function FillTypeToggle({
-  value,
-  onChange,
+function ImagePanel({
+  density,
+  state,
+  onPatch,
+  onPatchChrome,
 }: {
-  value: BackgroundKind
-  onChange: (next: BackgroundKind) => void
+  density: Density
+  state: ImagePrototypeState
+  onPatch: (next: Partial<ImagePrototypeState>) => void
+  onPatchChrome: (next: Partial<ImageChrome>) => void
 }) {
-  const size = useSize()
-  const isImage = value === "image"
+  const [tab, setTab] = useState("customize")
+  const chrome = activeChrome(state)
+
+  const customize = (
+    <>
+      <SourceSection state={state} onPatch={onPatch} density={density} />
+      <ContentSection state={state} onPatch={onPatch} density={density} />
+    </>
+  )
+
+  const styles = (
+    <>
+      {density === "full" ? (
+        <InspectorSection title="Device" icon={Monitor}>
+          <PropRow label="Mode">
+            <IconToggleGroup
+              value={state.device}
+              onChange={(device) => onPatch({ device })}
+              options={DEVICE_OPTIONS}
+            />
+          </PropRow>
+          <p className="px-0.5 text-[11px] leading-snug text-muted-foreground">
+            Mobile overwrites desktop for the styles below.
+          </p>
+        </InspectorSection>
+      ) : null}
+      <LayoutSection
+        state={state}
+        chrome={chrome}
+        onPatchChrome={onPatchChrome}
+      />
+      <SpacingSection
+        chrome={chrome}
+        onPatchChrome={onPatchChrome}
+        density={density}
+      />
+      <BorderSection chrome={chrome} onPatchChrome={onPatchChrome} />
+      <BackgroundSection
+        chrome={chrome}
+        onPatchChrome={onPatchChrome}
+        density={density}
+      />
+    </>
+  )
 
   return (
-    <Tooltip content={isImage ? "Solid fill" : "Image fill"} side="bottom">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-compact"
-        active={isImage}
-        aria-pressed={isImage}
-        aria-label={isImage ? "Solid fill" : "Image fill"}
-        onClick={() => onChange(isImage ? "color" : "image")}
-        className="h-7 w-7 shrink-0"
-      >
-        <ImageIcon size={size.icon} strokeWidth={isImage ? 2 : 1.5} />
-      </Button>
-    </Tooltip>
+    <PanelChrome>
+      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-card px-3 py-2.5">
+        <h3 className="min-w-0 flex-1 truncate text-body font-medium tracking-tight">
+          Image
+        </h3>
+        <Badge variant="dot" color="gray">
+          {density}
+        </Badge>
+      </header>
+      <div className="flex flex-1 flex-col px-3 py-2.5">
+        {density === "core" ? (
+          <>
+            {customize}
+            {styles}
+          </>
+        ) : (
+          <Tabs value={tab} onValueChange={setTab} size="compact">
+            <TabsList className="w-full">
+              <TabItem
+                value="customize"
+                label="Customize"
+                className="min-w-0 flex-1 justify-center"
+              />
+              <TabItem
+                value="style"
+                label="Edit styles"
+                className="min-w-0 flex-1 justify-center"
+              />
+            </TabsList>
+            <TabPanel value="customize" className="pt-2.5">
+              {customize}
+            </TabPanel>
+            <TabPanel value="style" className="pt-2.5">
+              {styles}
+            </TabPanel>
+          </Tabs>
+        )}
+      </div>
+    </PanelChrome>
   )
 }
 
-export function ImagePrototypeGallery() {
+function PrototypeStage({
+  title,
+  description,
+  density,
+}: {
+  title: string
+  description: string
+  density: Density
+}) {
   const [state, patch, patchChrome] = useImagePrototype()
   const shape = useShape()
 
   return (
-    <section className="flex flex-col gap-3" data-prototype="core">
+    <section className="flex flex-col gap-3" data-prototype={density}>
+      <div className="flex flex-col gap-0.5">
+        <h3 className="text-subtitle font-medium tracking-tight">{title}</h3>
+        <p className="max-w-2xl text-caption text-muted-foreground">
+          {description}
+        </p>
+      </div>
       <div
         className={cn(
           "flex flex-col overflow-hidden bg-card shadow-surface-3 lg:h-[38rem] lg:flex-row",
           shape.container
         )}
       >
-        <ImagePreview state={state} />
+        <ImagePreview state={state} density={density} />
         <ImagePanel
+          density={density}
           state={state}
           onPatch={patch}
           onPatchChrome={patchChrome}
         />
       </div>
     </section>
+  )
+}
+
+export function ImagePrototypeGallery() {
+  return (
+    <div className="flex flex-col gap-8">
+      <PrototypeStage
+        density="core"
+        title="Core"
+        description="One list. Same Image functions with linked values: file, alt, link, new tab, visibility, AUTO / FIXED / MAX size, align, radius, padding, margin, border, fill color."
+      />
+      <PrototypeStage
+        density="plus"
+        title="Plus"
+        description="Splits Customize / Edit styles. Adds a URL source, dynamic content, unlinkable corners and sides, and a background-image fill."
+      />
+      <PrototypeStage
+        density="full"
+        title="Full"
+        description="Everything in Plus, plus desktop / mobile style overrides. Mobile overwrites desktop."
+      />
+    </div>
   )
 }

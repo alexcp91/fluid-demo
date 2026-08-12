@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Expand, Link2, Minus, Plus, SquareRoundCorner, Unlink } from "lucide-react"
+import { Link2, Minus, Plus, Unlink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip } from "@/components/ui/tooltip"
 import { useShape } from "@/lib/shape-context"
@@ -12,98 +12,6 @@ const PX_MAX = 720
 
 export function clampPx(value: number, min = PX_MIN, max = PX_MAX): number {
   return Math.min(max, Math.max(min, value))
-}
-
-/** Figma-style dimension field: muted in-field label, editable value. */
-export function DimField({
-  label,
-  value,
-  onChange,
-  disabled = false,
-  min = 0,
-  max = PX_MAX,
-  suffix,
-}: {
-  label: string
-  value: number
-  onChange: (next: number) => void
-  disabled?: boolean
-  min?: number
-  max?: number
-  suffix?: string
-}) {
-  const shape = useShape()
-  const size = useSize()
-
-  return (
-    <label
-      className={cn(
-        "flex min-w-0 flex-1 items-center bg-muted px-1.5",
-        size.control,
-        shape.input,
-        disabled && "opacity-50"
-      )}
-    >
-      <span className="w-3.5 shrink-0 text-[11px] text-muted-foreground">
-        {label}
-      </span>
-      <input
-        type="text"
-        inputMode="numeric"
-        disabled={disabled}
-        aria-label={suffix ? `${label} in ${suffix}` : label}
-        value={String(value)}
-        onChange={(event) => {
-          const parsed = Number(event.target.value)
-          if (!Number.isFinite(parsed)) return
-          onChange(clampPx(Math.round(parsed), min, max))
-        }}
-        className={cn(
-          "min-w-0 flex-1 bg-transparent tabular-nums text-foreground outline-none",
-          size.text
-        )}
-      />
-    </label>
-  )
-}
-
-export function IndependentToggle({
-  linked,
-  onToggle,
-  kind,
-}: {
-  linked: boolean
-  onToggle: () => void
-  kind: "corners" | "padding"
-}) {
-  const size = useSize()
-  const independent = !linked
-  const Icon = kind === "corners" ? SquareRoundCorner : Expand
-  const label =
-    kind === "corners"
-      ? independent
-        ? "Uniform corners"
-        : "Independent corners"
-      : independent
-        ? "Uniform padding"
-        : "Independent padding"
-
-  return (
-    <Tooltip content={label} side="bottom">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-compact"
-        active={independent}
-        aria-pressed={independent}
-        aria-label={label}
-        onClick={onToggle}
-        className="h-7 w-7 shrink-0"
-      >
-        <Icon size={size.icon} strokeWidth={independent ? 2 : 1.5} />
-      </Button>
-    </Tooltip>
-  )
 }
 
 export function NumStepper({
@@ -177,7 +85,7 @@ export function NumStepper({
   )
 }
 
-export function MiniPx({
+function MiniPx({
   value,
   onChange,
   label,

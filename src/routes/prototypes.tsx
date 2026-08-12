@@ -20,9 +20,9 @@ function PrototypesPage() {
             </Badge>
           </div>
           <p className="max-w-2xl text-body text-muted-foreground">
-            Inspector studies for the email editor. Figma-style density:
-            in-field labels, appearance rows, independent corners and
-            padding. Fluid tokens.
+            Inspector studies for the email editor. Three densities of the
+            same Image control set — simpler chrome first, more structure
+            later. Fluid tokens throughout.
           </p>
         </header>
 
@@ -30,9 +30,9 @@ function PrototypesPage() {
           <div className="flex flex-col gap-1.5">
             <h2 className="text-title font-medium tracking-tight">Image</h2>
             <p className="max-w-2xl text-caption text-muted-foreground">
-              Square / rounded / circle sit next to a radius field. The
-              corner and padding icons expand to per-side values. Fill and
-              stroke are + rows, like Figma appearance.
+              Core is one list with linked values. Plus adds tabs, URL,
+              dynamic content, and per-side unlinking. Full adds
+              desktop/mobile overrides.
             </p>
           </div>
           <ImagePrototypeGallery />

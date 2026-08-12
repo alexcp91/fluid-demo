@@ -13,14 +13,12 @@ export function InspectorSection({
   title,
   icon: Icon,
   hint,
-  action,
   defaultOpen = true,
   children,
 }: {
   title: string
   icon?: LucideIcon
   hint?: string
-  action?: ReactNode
   defaultOpen?: boolean
   children: ReactNode
 }) {
@@ -29,46 +27,43 @@ export function InspectorSection({
 
   return (
     <section className="border-b border-border/60 last:border-b-0">
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "flex w-full items-center gap-1.5 px-0.5 text-left outline-none",
+          "text-caption text-muted-foreground transition-colors duration-80",
+          "hover:text-foreground",
+          "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)]",
+          size.control
+        )}
+      >
+        <ChevronDown
+          size={size.icon - 2}
+          strokeWidth={2}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1.5 px-0.5 text-left outline-none",
-            "text-caption text-muted-foreground transition-colors duration-80",
-            "hover:text-foreground",
-            "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)]",
-            size.control
+            "shrink-0 text-muted-foreground/70 transition-transform duration-150",
+            !open && "-rotate-90"
           )}
-        >
-          <ChevronDown
+          aria-hidden
+        />
+        {Icon ? (
+          <Icon
             size={size.icon - 2}
-            strokeWidth={2}
-            className={cn(
-              "shrink-0 text-muted-foreground/70 transition-transform duration-150",
-              !open && "-rotate-90"
-            )}
+            strokeWidth={1.75}
+            className="shrink-0"
             aria-hidden
           />
-          {Icon ? (
-            <Icon
-              size={size.icon - 2}
-              strokeWidth={1.75}
-              className="shrink-0"
-              aria-hidden
-            />
-          ) : null}
-          <span className="flex-1 truncate font-medium tracking-wide">
-            {title}
+        ) : null}
+        <span className="flex-1 truncate font-medium tracking-wide">
+          {title}
+        </span>
+        {hint ? (
+          <span className="shrink-0 tabular-nums text-muted-foreground/70">
+            {hint}
           </span>
-          {hint && !action ? (
-            <span className="shrink-0 tabular-nums text-muted-foreground/70">
-              {hint}
-            </span>
-          ) : null}
-        </button>
-        {action ? <div className="shrink-0 pr-0.5">{action}</div> : null}
-      </div>
+        ) : null}
+      </button>
       {open ? (
         <div className="flex flex-col gap-1.5 pb-3 pt-0.5">{children}</div>
       ) : null}

@@ -93,26 +93,18 @@ export const SOURCE_BYTES = {
   icon: "4 KB",
 } as const satisfies Record<ImageSource, string>
 
-export function linkedQuad(value: number): Quad {
-  return { top: value, right: value, bottom: value, left: value, linked: true }
-}
-
-export function linkedCorners(value: number): Corners {
-  return {
-    topLeft: value,
-    topRight: value,
-    bottomRight: value,
-    bottomLeft: value,
-    linked: true,
-  }
-}
-
 export function zeroQuad(): Quad {
-  return linkedQuad(0)
+  return { top: 0, right: 0, bottom: 0, left: 0, linked: true }
 }
 
 export function zeroCorners(): Corners {
-  return linkedCorners(0)
+  return {
+    topLeft: 0,
+    topRight: 0,
+    bottomRight: 0,
+    bottomLeft: 0,
+    linked: true,
+  }
 }
 
 export function defaultImageChrome(): ImageChrome {
