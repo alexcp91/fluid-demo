@@ -1,0 +1,79 @@
+{
+  "id": "product-launch",
+  "name": "Product launch",
+  "updatedAt": "2026-08-11T18:30:00.000Z",
+  "meta": {
+    "subject": "Introducing Fluid Controls",
+    "previewText": "Springs, proximity hover, and a size ladder that stays consistent.",
+    "width": "600",
+    "showPreheader": true,
+    "fromName": "Fluid"
+  },
+  "blocks": [
+    {
+      "id": "header-1",
+      "type": "header",
+      "chrome": {
+        "padding": "md",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "brand": "Fluid",
+      "tagline": "New release",
+      "showLogo": true
+    },
+    {
+      "id": "heading-1",
+      "type": "heading",
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "text": "Ship interfaces that feel alive",
+      "size": "lg"
+    },
+    {
+      "id": "paragraph-1",
+      "type": "paragraph",
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "text": "Our latest controls bring spring physics and proximity hover to every press \u2014 without changing your layout system.",
+      "muted": false
+    },
+    {
+      "id": "button-1",
+      "type": "button",
+      "chrome": {
+        "padding": "md",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "label": "See what's new",
+      "url": "https://example.com/launch",
+      "style": "filled",
+      "fullWidth": false
+    },
+    {
+      "id": "footer-1",
+      "type": "footer",
+      "chrome": {
+        "padding": "md",
+        "background": "none",
+        "visible": true,
+        "align": "center"
+      },
+      "company": "Fluid Functionalism",
+      "address": "San Francisco, CA",
+      "showUnsubscribe": true,
+      "showSocial": false
+    }
+  ]
+}

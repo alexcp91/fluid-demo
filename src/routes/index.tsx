@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useEffect, useState, type ReactNode } from "react"
-import { ArrowRight, Mail } from "lucide-react"
+import { ArrowRight, LayoutTemplate, Mail } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { EmailListItem } from "@/email/schema"
@@ -33,12 +33,18 @@ function HomePage() {
             Workspace
           </h1>
           <p className="max-w-xl text-body text-muted-foreground">
-            A small app shell around Fluid components — email editor, settings
-            with a nested rail, and a live component gallery.
+            A small app shell around Fluid components — email templates, the
+            editor, settings with a nested rail, and a live component gallery.
           </p>
         </header>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <HomeLink
+            to="/email-templates"
+            title="Email templates"
+            description="Browse, rename, edit, duplicate, and delete saved designs."
+            icon={<LayoutTemplate size={16} strokeWidth={1.75} />}
+          />
           <HomeLink
             to="/email-editor"
             title="Email editor"
@@ -77,6 +83,7 @@ function HomePage() {
                 <li key={email.id}>
                   <Link
                     to="/email-editor"
+                    search={{ id: email.id }}
                     className="flex items-center justify-between rounded-lg bg-card px-4 py-3 shadow-surface-3 outline-none transition-colors duration-80 hover:bg-muted/40 focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)]"
                   >
                     <div className="flex min-w-0 flex-col gap-0.5">
@@ -101,10 +108,10 @@ function HomePage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild>
-            <Link to="/email-editor">Open editor</Link>
+            <Link to="/email-templates">Email templates</Link>
           </Button>
           <Button variant="secondary" asChild>
-            <Link to="/components">Browse components</Link>
+            <Link to="/email-editor">Open editor</Link>
           </Button>
           <Button variant="ghost" asChild>
             <Link to="/settings">Settings</Link>
@@ -122,7 +129,7 @@ function HomeLink({
   icon,
   badge,
 }: {
-  to: "/email-editor" | "/components" | "/settings"
+  to: "/email-templates" | "/email-editor" | "/components" | "/settings"
   title: string
   description: string
   icon?: ReactNode

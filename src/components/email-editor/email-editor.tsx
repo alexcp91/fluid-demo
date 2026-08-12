@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { Link } from "@tanstack/react-router"
 import {
   Monitor,
   Smartphone,
@@ -11,6 +12,8 @@ import {
   Code2,
   Redo2,
   Undo2,
+  LayoutTemplate,
+  ArrowLeft,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,12 +21,14 @@ import { Tooltip } from "@/components/ui/tooltip"
 import { Tabs, TabsList, TabItem, TabPanel } from "@/components/ui/tabs"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { InputField, InputGroup } from "@/components/ui/input-group"
 import { SizeProvider } from "@/lib/size-context"
 import { exportToHtml } from "@/email/export-html"
 import { EmailDocumentSchema } from "@/email/schema"
@@ -66,8 +71,16 @@ function safeFilename(subject: string, id: string, ext: string) {
   return `${safe || id}.${ext}`
 }
 
-export function EmailEditor() {
+export function EmailEditor({
+  emailId,
+  templateId,
+}: {
+  emailId?: string
+  templateId?: string
+}) {
   const doc = useEmailStore((s) => s.doc)
+  const templateName = useEmailStore((s) => s.templateName)
+  const resourceKind = useEmailStore((s) => s.resourceKind)
   const device = useEmailStore((s) => s.device)
   const dirty = useEmailStore((s) => s.dirty)
   const saveStatus = useEmailStore((s) => s.saveStatus)
@@ -75,6 +88,7 @@ export function EmailEditor() {
   const setDevice = useEmailStore((s) => s.setDevice)
   const load = useEmailStore((s) => s.load)
   const save = useEmailStore((s) => s.save)
+  const saveAsTemplate = useEmailStore((s) => s.saveAsTemplate)
   const undo = useEmailStore((s) => s.undo)
   const redo = useEmailStore((s) => s.redo)
   const canUndo = useCanUndo()
@@ -83,14 +97,25 @@ export function EmailEditor() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewTab, setPreviewTab] = useState("preview")
   const [jsonOpen, setJsonOpen] = useState(false)
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false)
+  const [templateNameDraft, setTemplateNameDraft] = useState("")
+  const [savedTemplateId, setSavedTemplateId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState<"json" | "html" | null>(null)
 
+  const editingTemplate = Boolean(templateId) || resourceKind === "template"
+
   useEffect(() => {
-    void load("welcome").catch(() => {
+    if (templateId) {
+      void load(templateId, "template").catch(() => {
+        /* loadError is set on the store */
+      })
+      return
+    }
+    void load(emailId ?? "welcome", "email").catch(() => {
       /* loadError is set on the store */
     })
-  }, [load])
+  }, [load, emailId, templateId])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -155,10 +180,31 @@ export function EmailEditor() {
     }
   }
 
+  function openSaveAsTemplate() {
+    setTemplateNameDraft(doc.meta.subject || "Untitled template")
+    setSavedTemplateId(null)
+    setSaveTemplateOpen(true)
+  }
+
+  async function handleSaveAsTemplate() {
+    setBusy(true)
+    try {
+      const saved = await saveAsTemplate(templateNameDraft)
+      setSavedTemplateId(saved.id)
+    } catch {
+      /* leave dialog open on failure */
+    } finally {
+      setBusy(false)
+    }
+  }
+
   function handleExport() {
     const html = exportToHtml(doc)
     downloadHtml(safeFilename(doc.meta.subject, doc.id, "html"), html)
   }
+
+  const title =
+    editingTemplate && templateName ? templateName : doc.meta.subject
 
   const saveLabel =
     saveStatus === "saving"
@@ -167,18 +213,43 @@ export function EmailEditor() {
         ? "Saved"
         : saveStatus === "error"
           ? "Retry save"
-          : "Save"
+          : editingTemplate
+            ? "Save template"
+            : "Save"
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
       <header className="flex items-center justify-between gap-4 border-b border-border px-4 py-2.5">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex items-center gap-2">
+            {editingTemplate ? (
+              <Tooltip content="Back to templates">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon-compact"
+                  aria-label="Back to templates"
+                >
+                  <Link to="/email-templates">
+                    <ArrowLeft size={15} strokeWidth={1.75} />
+                  </Link>
+                </Button>
+              </Tooltip>
+            ) : null}
             <h1 className="truncate text-subtitle font-medium tracking-tight">
-              {doc.meta.subject}
+              {title}
             </h1>
-            <Badge variant="dot" color={dirty ? "yellow" : "green"}>
-              {dirty ? "Unsaved" : "Draft"}
+            <Badge
+              variant="dot"
+              color={editingTemplate ? "blue" : dirty ? "yellow" : "green"}
+            >
+              {editingTemplate
+                ? dirty
+                  ? "Template · Unsaved"
+                  : "Template"
+                : dirty
+                  ? "Unsaved"
+                  : "Draft"}
             </Badge>
           </div>
           <p className="truncate text-caption text-muted-foreground">
@@ -186,7 +257,9 @@ export function EmailEditor() {
               ? `Load error · ${loadError}`
               : selectedNode
                 ? `Selected · ${selectedNode.type}`
-                : "Select a layer or add a block"}
+                : editingTemplate
+                  ? "Editing saved template — save updates future uses"
+                  : "Select a layer or add a block"}
           </p>
         </div>
 
@@ -229,7 +302,25 @@ export function EmailEditor() {
         </SizeProvider>
 
         <div className="flex shrink-0 items-center gap-2">
-          <Tooltip content="Save document JSON">
+          {!editingTemplate ? (
+            <Tooltip content="Save current design as a reusable template">
+              <Button
+                variant="secondary"
+                leadingIcon={LayoutTemplate}
+                disabled={busy}
+                onClick={openSaveAsTemplate}
+              >
+                Save as template
+              </Button>
+            </Tooltip>
+          ) : null}
+          <Tooltip
+            content={
+              editingTemplate
+                ? "Update this template for future emails"
+                : "Save document JSON"
+            }
+          >
             <Button
               variant="secondary"
               leadingIcon={Save}
@@ -268,6 +359,69 @@ export function EmailEditor() {
         <EmailCanvas />
         <EmailSidePanel />
       </div>
+
+      <Dialog
+        open={saveTemplateOpen}
+        onOpenChange={(open) => {
+          setSaveTemplateOpen(open)
+          if (!open) setSavedTemplateId(null)
+        }}
+      >
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle>
+              {savedTemplateId ? "Template saved" : "Save as template"}
+            </DialogTitle>
+            <DialogDescription>
+              {savedTemplateId
+                ? "It’s in your Email templates library. You can edit the design anytime from there."
+                : "Adds this design to My Templates so you can reuse and update it later."}
+            </DialogDescription>
+          </DialogHeader>
+          {savedTemplateId ? null : (
+            <div className="px-1 pb-2">
+              <InputGroup className="w-full">
+                <InputField
+                  index={0}
+                  label="Template name"
+                  value={templateNameDraft}
+                  onChange={setTemplateNameDraft}
+                  placeholder="Welcome series"
+                />
+              </InputGroup>
+            </div>
+          )}
+          <DialogFooter>
+            {savedTemplateId ? (
+              <>
+                <DialogClose asChild>
+                  <Button variant="ghost" type="button">
+                    Keep editing
+                  </Button>
+                </DialogClose>
+                <Button asChild>
+                  <Link to="/email-templates">View templates</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <DialogClose asChild>
+                  <Button variant="ghost" type="button" disabled={busy}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="button"
+                  disabled={busy || !templateNameDraft.trim()}
+                  onClick={() => void handleSaveAsTemplate()}
+                >
+                  {busy ? "Saving…" : "Save template"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={previewOpen}
