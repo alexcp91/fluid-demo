@@ -184,7 +184,7 @@ function ImagePreview({
   }
 
   return (
-    <div className="flex min-h-[22rem] flex-1 flex-col bg-muted/60 p-5">
+    <div className="flex min-h-[22rem] flex-1 flex-col overflow-hidden bg-muted/60 p-5">
       <div
         className={cn(
           "mx-auto flex w-full flex-1 flex-col bg-card shadow-surface-3",
@@ -679,7 +679,7 @@ function BackgroundSection({
 function PanelChrome({ children }: { children: ReactNode }) {
   return (
     <SizeProvider size="compact">
-      <aside className="flex w-full shrink-0 flex-col overflow-auto border-t border-border bg-card lg:w-[18.5rem] lg:border-t-0 lg:border-l">
+      <aside className="flex max-h-[28rem] w-full shrink-0 flex-col overflow-auto border-t border-border bg-card lg:max-h-none lg:w-[18.5rem] lg:border-t-0 lg:border-l">
         {children}
       </aside>
     </SizeProvider>
@@ -744,7 +744,7 @@ function ImagePanel({
 
   return (
     <PanelChrome>
-      <header className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-card px-3 py-2.5">
         <h3 className="min-w-0 flex-1 truncate text-body font-medium tracking-tight">
           Image
         </h3>
@@ -807,7 +807,7 @@ function PrototypeStage({
       </div>
       <div
         className={cn(
-          "flex flex-col overflow-hidden bg-card shadow-surface-3 lg:flex-row",
+          "flex flex-col overflow-hidden bg-card shadow-surface-3 lg:h-[38rem] lg:flex-row",
           shape.container
         )}
       >
