@@ -20,9 +20,9 @@ function PrototypesPage() {
             </Badge>
           </div>
           <p className="max-w-2xl text-body text-muted-foreground">
-            Inspector studies for the email editor. Core layout: one list.
-            Each section starts with presets, then flips to Adjust for
-            bespoke controls.
+            Inspector studies for the email editor. Figma-style density:
+            in-field labels, appearance rows, independent corners and
+            padding. Fluid tokens.
           </p>
         </header>
 
@@ -30,10 +30,9 @@ function PrototypesPage() {
           <div className="flex flex-col gap-1.5">
             <h2 className="text-title font-medium tracking-tight">Image</h2>
             <p className="max-w-2xl text-caption text-muted-foreground">
-              Simple is named presets — square / rounded / circle, none /
-              tight / room, none / line / strong. Adjust keeps the same
-              values and opens per-side radius, padding, margin, border
-              stroke, and the rest of the Tabular set.
+              Square / rounded / circle sit next to a radius field. The
+              corner and padding icons expand to per-side values. Fill and
+              stroke are + rows, like Figma appearance.
             </p>
           </div>
           <ImagePrototypeGallery />
