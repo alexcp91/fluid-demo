@@ -20,15 +20,21 @@ import {
 } from "@/email/history"
 import {
   EmailDocumentSchema,
+  EmailTemplateSchema,
   type BlockType,
   type DeviceMode,
   type EmailDocument,
+  type EmailTemplate,
 } from "@/email/schema"
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error"
+export type EditorResourceKind = "email" | "template"
 
 interface EmailEditorState {
   doc: EmailDocument
+  /** Display name when editing a saved template. */
+  templateName: string | null
+  resourceKind: EditorResourceKind
   selectedId: string | null
   device: DeviceMode
   dirty: boolean
@@ -43,6 +49,7 @@ interface EmailEditorState {
 
   setDoc: (doc: EmailDocument) => void
   setMeta: (meta: Partial<EmailDocument["meta"]>) => void
+  setTemplateName: (name: string) => void
   updateBlock: (id: string, patch: Record<string, unknown>) => void
   insertBlock: (type: BlockType, afterId?: string | null) => string
   insertBlockAt: (type: BlockType, index: number) => string
@@ -60,8 +67,9 @@ interface EmailEditorState {
   undo: () => boolean
   redo: () => boolean
   markClean: () => void
-  load: (id: string) => Promise<void>
+  load: (id: string, kind?: EditorResourceKind) => Promise<void>
   save: () => Promise<void>
+  saveAsTemplate: (name: string) => Promise<EmailTemplate>
 }
 
 function touch(doc: EmailDocument): EmailDocument {
@@ -105,6 +113,8 @@ function commit(
 
 export const useEmailStore = create<EmailEditorState>((set, get) => ({
   doc: createInitialDocument("welcome"),
+  templateName: null,
+  resourceKind: "email",
   selectedId: null,
   device: "desktop",
   dirty: false,
@@ -128,6 +138,10 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
       }),
       "meta"
     )
+  },
+
+  setTemplateName: (name) => {
+    commit(get, set, () => ({ templateName: name }), "template-name")
   },
 
   updateBlock: (id, patch) => {
@@ -260,18 +274,38 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
 
   markClean: () => set({ dirty: false, saveStatus: "saved" }),
 
-  load: async (id) => {
+  load: async (id, kind = "email") => {
     set({ loadError: null, saveStatus: "idle" })
     try {
-      const res = await fetch(`/api/emails/${encodeURIComponent(id)}`)
+      const base = kind === "template" ? "/api/templates" : "/api/emails"
+      const res = await fetch(`${base}/${encodeURIComponent(id)}`)
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `Failed to load (${res.status})`)
       }
       const json = await res.json()
+      if (kind === "template") {
+        const template = EmailTemplateSchema.parse(json)
+        const { name, ...doc } = template
+        set({
+          doc,
+          templateName: name,
+          resourceKind: "template",
+          selectedId: null,
+          dirty: false,
+          saveStatus: "idle",
+          loadError: null,
+          past: [],
+          future: [],
+          coalesceKey: null,
+        })
+        return
+      }
       const doc = EmailDocumentSchema.parse(json)
       set({
         doc,
+        templateName: null,
+        resourceKind: "email",
         selectedId: null,
         dirty: false,
         saveStatus: "idle",
@@ -288,9 +322,38 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
   },
 
   save: async () => {
-    const { doc } = get()
+    const { doc, resourceKind, templateName } = get()
     set({ saveStatus: "saving" })
     try {
+      if (resourceKind === "template") {
+        const payload = EmailTemplateSchema.parse({
+          ...doc,
+          name: templateName?.trim() || doc.meta.subject || "Untitled template",
+          updatedAt: new Date().toISOString(),
+        })
+        const res = await fetch(
+          `/api/templates/${encodeURIComponent(payload.id)}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        )
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(text || `Save failed (${res.status})`)
+        }
+        const saved = EmailTemplateSchema.parse(await res.json())
+        const { name, ...savedDoc } = saved
+        set({
+          doc: savedDoc,
+          templateName: name,
+          dirty: false,
+          saveStatus: "saved",
+        })
+        return
+      }
+
       const payload = EmailDocumentSchema.parse({
         ...doc,
         updatedAt: new Date().toISOString(),
@@ -310,6 +373,33 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
       set({ saveStatus: "error" })
       throw err
     }
+  },
+
+  saveAsTemplate: async (name) => {
+    const { doc } = get()
+    const trimmed = name.trim() || "Untitled template"
+    const slug = trimmed
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40)
+    const id = `${slug || "template"}-${Date.now().toString(36)}`
+    const payload = EmailTemplateSchema.parse({
+      ...doc,
+      id,
+      name: trimmed,
+      updatedAt: new Date().toISOString(),
+    })
+    const res = await fetch(`/api/templates/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text || `Save as template failed (${res.status})`)
+    }
+    return EmailTemplateSchema.parse(await res.json())
   },
 }))
 

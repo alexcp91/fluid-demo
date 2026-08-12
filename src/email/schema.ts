@@ -158,5 +158,19 @@ export const EmailListItemSchema = z.object({
   updatedAt: z.string(),
 })
 
+/** Saved reusable design — EmailDocument plus a display name. */
+export const EmailTemplateSchema = EmailDocumentSchema.extend({
+  name: z.string().min(1),
+})
+
+export const EmailTemplateListItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  subject: z.string(),
+  updatedAt: z.string(),
+})
+
 export type EmailDocument = z.infer<typeof EmailDocumentSchema>
 export type EmailListItem = z.infer<typeof EmailListItemSchema>
+export type EmailTemplate = z.infer<typeof EmailTemplateSchema>
+export type EmailTemplateListItem = z.infer<typeof EmailTemplateListItemSchema>

@@ -32,5 +32,11 @@ data/emails/*
 !data/emails/welcome.json
 !data/emails/.gitkeep
 
+# Saved templates (keep seeds)
+data/templates/*
+!data/templates/welcome-series.json
+!data/templates/product-launch.json
+!data/templates/.gitkeep
+
 # Local agent audit trails / browser QA artifacts
 .audit/
