@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react"
+import { useRef, type CSSProperties, type ReactNode } from "react"
 import { Copy, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useEmailStore, useSelectedNode } from "@/email/store"
@@ -10,7 +10,7 @@ import { FormatToolbar } from "./format-toolbar"
 import { InlineText } from "./inline-text"
 import { DragHandle } from "./drag-handle"
 import { DropSlot } from "./drop-slot"
-import { useSortableBlocks } from "./use-sortable-blocks"
+import { useCanvasSortable } from "./use-canvas-sortable"
 import {
   BG_CLASS,
   BLOCK_LABELS,
@@ -28,8 +28,10 @@ function SelectableBlock({
   selected,
   hidden,
   sortable = true,
+  nodeType,
   onSelect,
   className,
+  style,
   children,
 }: {
   id: string
@@ -37,8 +39,10 @@ function SelectableBlock({
   selected: boolean
   hidden?: boolean
   sortable?: boolean
+  nodeType?: string
   onSelect: (id: string) => void
   className?: string
+  style?: CSSProperties
   children: ReactNode
 }) {
   const duplicateNode = useEmailStore((s) => s.duplicateNode)
@@ -47,9 +51,11 @@ function SelectableBlock({
   return (
     <div
       data-block-id={id}
+      data-node-type={nodeType}
       data-sortable-item={sortable ? true : undefined}
       role="group"
       tabIndex={0}
+      style={style}
       onClick={(e) => {
         e.stopPropagation()
         onSelect(id)
@@ -63,15 +69,15 @@ function SelectableBlock({
       className={cn(
         "group/block relative w-full rounded-md text-left outline-none transition-[box-shadow,background-color,opacity] duration-80",
         "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)]",
+        className,
         selected
           ? "ring-2 ring-[color:var(--focus-ring,#6B97FF)] ring-offset-2 ring-offset-card"
           : "hover:ring-1 hover:ring-border",
-        hidden && "opacity-40",
-        className
+        hidden && "opacity-40"
       )}
     >
       {sortable ? (
-        <DragHandle className="absolute left-0.5 top-1.5 z-10 opacity-0 transition-opacity duration-80 group-hover/block:opacity-100 group-focus-within/block:opacity-100" />
+        <DragHandle className="absolute left-0.5 top-1.5 z-10 opacity-50 transition-opacity duration-80 group-hover/block:opacity-100 group-focus-within/block:opacity-100" />
       ) : null}
       {selected && (
         <span className="pointer-events-none absolute -top-2.5 left-7 z-10 rounded bg-[color:var(--focus-ring,#6B97FF)] px-1.5 py-0.5 text-[10px] font-medium text-white">
@@ -153,6 +159,7 @@ function BlockView({
     return (
       <SelectableBlock
         id={node.id}
+        nodeType={node.type}
         label={label}
         selected={selected}
         hidden={hidden}
@@ -191,6 +198,7 @@ function BlockView({
     return (
       <SelectableBlock
         id={node.id}
+        nodeType={node.type}
         label={label}
         selected={selected}
         hidden={hidden}
@@ -231,6 +239,7 @@ function BlockView({
     return (
       <SelectableBlock
         id={node.id}
+        nodeType={node.type}
         label={label}
         selected={selected}
         hidden={hidden}
@@ -262,6 +271,7 @@ function BlockView({
     return (
       <SelectableBlock
         id={node.id}
+        nodeType={node.type}
         label={label}
         selected={selected}
         hidden={hidden}
@@ -292,6 +302,7 @@ function BlockView({
     return (
       <SelectableBlock
         id={node.id}
+        nodeType={node.type}
         label={label}
         selected={selected}
         hidden={hidden}
@@ -340,16 +351,25 @@ function BlockView({
     return (
       <SelectableBlock
         id={node.id}
+        nodeType="row"
         label="Row"
         selected={selected}
         hidden={hidden}
         sortable
         onSelect={select}
-        className={cn(shell, "ring-1 ring-dashed ring-border/70")}
+        className={cn(
+          shell,
+          selected
+            ? undefined
+            : "ring-1 ring-dashed ring-border/70"
+        )}
       >
         <div
+          data-sortable-container
+          data-parent-id={node.id}
+          data-container-kind="row"
           className={cn(
-            "flex w-full",
+            "email-sortable flex w-full",
             GAP_CLASS[node.gap],
             node.stackOnMobile && device === "mobile"
               ? "flex-col"
@@ -358,22 +378,17 @@ function BlockView({
           )}
         >
           {columns.length === 0 ? (
-            <p className="px-2 py-4 text-center text-[11px] text-muted-foreground">
+            <p className="pointer-events-none px-2 py-4 text-center text-[11px] text-muted-foreground">
               Empty row
             </p>
           ) : (
             columns.map((column) => (
-              <div
+              <BlockView
                 key={column.id}
-                className="min-w-0 flex-1"
-                style={{ flexGrow: column.flex }}
-              >
-                <BlockView
-                  node={column}
-                  doc={doc}
-                  selectedId={selectedId}
-                />
-              </div>
+                node={column}
+                doc={doc}
+                selectedId={selectedId}
+              />
             ))
           )}
         </div>
@@ -385,16 +400,22 @@ function BlockView({
     return (
       <SelectableBlock
         id={node.id}
+        nodeType="column"
         label="Column"
         selected={selected}
         hidden={hidden}
-        sortable={false}
+        sortable
         onSelect={select}
-        className={cn(shell, "h-full ring-1 ring-dashed ring-border/60")}
+        style={{ flexGrow: node.flex }}
+        className={cn(
+          shell,
+          "flex min-h-28 min-w-0 flex-1 flex-col self-stretch",
+          selected ? undefined : "ring-1 ring-dashed ring-border/60"
+        )}
       >
         <div
           className={cn(
-            "flex h-full min-h-10 flex-col",
+            "flex min-h-28 flex-1 flex-col",
             node.vAlign === "middle" && "justify-center",
             node.vAlign === "bottom" && "justify-end"
           )}
@@ -403,6 +424,7 @@ function BlockView({
             doc={doc}
             parent={node.id as ContainerId}
             selectedId={selectedId}
+            kind="column"
             emptyLabel="Drop a block into this column"
           />
         </div>
@@ -415,6 +437,7 @@ function BlockView({
   return (
     <SelectableBlock
       id={node.id}
+      nodeType={node.type}
       label={label}
       selected={selected}
       hidden={hidden}
@@ -464,25 +487,21 @@ function ContainerChildren({
   parent,
   selectedId,
   emptyLabel,
+  kind,
 }: {
   doc: EmailDocument
   parent: ContainerId
   selectedId: string | null
   emptyLabel: string
+  kind: "body" | "column"
 }) {
-  const listRef = useRef<HTMLDivElement>(null)
   const paletteDragType = useEmailStore((s) => s.paletteDragType)
-  const reorderChildren = useEmailStore((s) => s.reorderChildren)
   const children = childrenOf(doc, parent)
+  const isPaletteDragging = Boolean(paletteDragType)
 
-  useSortableBlocks(listRef, {
-    order: paletteDragType ? [] : children.map((child) => child.id),
-    onReorder: (orderedIds) => reorderChildren(parent, orderedIds),
-  })
-
-  if (paletteDragType) {
+  if (isPaletteDragging) {
     return (
-      <div className="flex min-h-10 flex-col gap-1">
+      <div className="flex min-h-12 flex-col gap-1">
         {children.length === 0 ? (
           <DropSlot into={parent} index={0} empty />
         ) : (
@@ -501,7 +520,15 @@ function ContainerChildren({
   }
 
   return (
-    <div ref={listRef} className="email-sortable flex min-h-10 flex-col gap-1">
+    <div
+      data-sortable-container
+      data-parent-id={parent}
+      data-container-kind={kind}
+      className={cn(
+        "email-sortable flex flex-col gap-1 rounded-md",
+        kind === "column" ? "min-h-28 flex-1" : "min-h-12"
+      )}
+    >
       {children.map((child) => (
         <BlockView
           key={child.id}
@@ -511,7 +538,7 @@ function ContainerChildren({
         />
       ))}
       {children.length === 0 && (
-        <p className="px-3 py-4 text-center text-[11px] text-muted-foreground">
+        <p className="pointer-events-none px-3 py-5 text-center text-[11px] text-muted-foreground">
           {emptyLabel}
         </p>
       )}
@@ -520,10 +547,12 @@ function ContainerChildren({
 }
 
 export function EmailCanvas() {
+  const canvasRef = useRef<HTMLDivElement>(null)
   const doc = useEmailStore((s) => s.doc)
   const selected = useEmailStore((s) => s.selectedId)
   const device = useEmailStore((s) => s.device)
   const paletteDragType = useEmailStore((s) => s.paletteDragType)
+  const moveNode = useEmailStore((s) => s.moveNode)
   const select = useEmailStore((s) => s.select)
   const selectedNode = useSelectedNode()
 
@@ -536,6 +565,23 @@ export function EmailCanvas() {
       RICH_BLOCK_TYPES.includes(selectedNode.type)
   )
   const isPaletteDragging = Boolean(paletteDragType)
+  // Recreate Sortable only when containers appear/disappear (new row/column).
+  const layoutKey = Object.values(doc.nodes)
+    .filter(
+      (node) =>
+        node.type === "body" ||
+        node.type === "column" ||
+        node.type === "row"
+    )
+    .map((node) => node.id)
+    .sort()
+    .join("|")
+
+  useCanvasSortable(canvasRef, {
+    enabled: !isPaletteDragging,
+    layoutKey,
+    onMove: ({ id, into, before }) => moveNode(id, into, before),
+  })
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-auto bg-muted/40 px-6 py-8">
@@ -554,16 +600,13 @@ export function EmailCanvas() {
             {width}px ·{" "}
             {paletteDragType
               ? `Drop to insert ${paletteDragType}`
-              : "Drag handles to reorder"}
+              : "Drag grips to reorder — blocks, columns, and rows"}
           </span>
         </div>
 
         <div
-          className={cn(
-            "flex w-full flex-col gap-1 rounded-xl bg-card p-3 shadow-surface-3 transition-[box-shadow] duration-80",
-            isPaletteDragging &&
-              "ring-1 ring-[color-mix(in_oklab,var(--focus-ring,#6B97FF)_40%,transparent)]"
-          )}
+          ref={canvasRef}
+          className="flex w-full flex-col gap-1 rounded-xl bg-card p-3 shadow-surface-3"
           style={{ maxWidth: width + 24 }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -577,6 +620,7 @@ export function EmailCanvas() {
             doc={doc}
             parent={doc.root}
             selectedId={selected}
+            kind="body"
             emptyLabel="Click or drag a block from the palette to get started"
           />
         </div>

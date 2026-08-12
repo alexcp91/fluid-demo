@@ -4,7 +4,7 @@ import { useEmailStore } from "@/email/store"
 import { readPaletteBlockType } from "./palette-drag"
 
 /**
- * Drop target between canvas blocks (or empty canvas). Visible only while a
+ * Drop target between canvas blocks (or empty container). Visible only while a
  * palette block type is being dragged.
  */
 export function DropSlot({
@@ -25,7 +25,6 @@ export function DropSlot({
   if (!paletteDragType) return null
 
   function accept(e: DragEvent) {
-    // Prefer store flag over MIME in types[] — Safari hides custom types mid-drag.
     e.preventDefault()
     e.dataTransfer.dropEffect = "copy"
     return true

@@ -7,7 +7,7 @@ export function DragHandle({ className }: { className?: string }) {
     <button
       type="button"
       data-drag-handle
-      aria-label="Drag to reorder"
+      aria-label="Drag to move"
       className={cn(
         "inline-flex h-6 w-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground outline-none",
         "hover:bg-muted hover:text-foreground active:cursor-grabbing",
@@ -15,6 +15,7 @@ export function DragHandle({ className }: { className?: string }) {
         className
       )}
       onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <GripVertical size={14} strokeWidth={1.75} />
     </button>

@@ -85,9 +85,12 @@ export function* walk(
 export function beforeIdAtIndex(
   document: EmailDocument,
   parent: ContainerId,
-  index: number
+  index: number,
+  exclude: NodeId | null = null
 ): NodeId | null {
-  const children = childrenOf(document, parent)
+  const children = childrenOf(document, parent).filter(
+    (node) => exclude === null || node.id !== exclude
+  )
   const safeIndex = Math.max(0, Math.trunc(index))
   return children[safeIndex]?.id ?? null
 }

@@ -66,6 +66,12 @@ interface EmailEditorState {
   ) => string | null
   duplicateNode: (id: string) => string | null
   removeNode: (id: string) => void
+  moveNode: (
+    id: string,
+    into: string,
+    before?: string | null
+  ) => boolean
+  moveNodeAt: (id: string, into: string, index: number) => boolean
   reorderChildren: (parent: string, orderedIds: string[]) => void
   select: (id: string | null) => void
   setDevice: (device: DeviceMode) => void
@@ -200,6 +206,24 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
     })
   },
 
+  moveNode: (id, into, before = null) =>
+    get().dispatch({
+      kind: "move",
+      node: asNodeId(id),
+      into: asContainerId(into),
+      before: before === null ? null : asNodeId(before),
+    }),
+
+  moveNodeAt: (id, into, index) => {
+    const before = beforeIdAtIndex(
+      get().doc,
+      asContainerId(into),
+      index,
+      asNodeId(id)
+    )
+    return get().moveNode(id, into, before)
+  },
+
   reorderChildren: (parent, orderedIds) => {
     const state = get()
     let doc = state.doc
@@ -297,6 +321,7 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
         past: [],
         future: [],
         coalesceKey: null,
+        paletteDragType: null,
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load"
