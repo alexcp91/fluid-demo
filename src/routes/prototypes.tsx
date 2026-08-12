@@ -20,8 +20,9 @@ function PrototypesPage() {
             </Badge>
           </div>
           <p className="max-w-2xl text-body text-muted-foreground">
-            Inspector studies for the email editor. Fluid chrome, Tabular's
-            Image control set.
+            Inspector studies for the email editor. Three densities of the
+            same Image control set — simpler chrome first, more structure
+            later. Fluid tokens throughout.
           </p>
         </header>
 
@@ -29,10 +30,9 @@ function PrototypesPage() {
           <div className="flex flex-col gap-1.5">
             <h2 className="text-title font-medium tracking-tight">Image</h2>
             <p className="max-w-2xl text-caption text-muted-foreground">
-              Source (file, URL, icon), alt, click-through link, new tab,
-              dynamic content. On styles: desktop/mobile, visibility, AUTO /
-              FIXED / MAX width and height, align, linked corner radius,
-              four-sided padding and margin, border, and background.
+              Core is one list with linked values. Plus adds tabs, URL,
+              dynamic content, and per-side unlinking. Full adds
+              desktop/mobile overrides.
             </p>
           </div>
           <ImagePrototypeGallery />
