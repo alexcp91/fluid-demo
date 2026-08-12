@@ -1,0 +1,12 @@
+---
+description: Fluid Functionalism + Base UI conventions for this demo app
+alwaysApply: true
+---
+
+# Fluid + Base UI
+
+- Prefer Fluid Functionalism components from `@/components/ui` for interactive UI.
+- Base UI (`@base-ui/react`) is fine when Fluid does not cover a need (primitives, composition).
+- Styling must feel in-line with Fluid Functionalism: design tokens from `src/index.css` (`bg-card`, `text-muted-foreground`, `shadow-surface-*`, size/shape providers), not stock shadcn/Base chrome.
+- Do not invent parallel design systems; extend Fluid tokens and motion patterns.
+---

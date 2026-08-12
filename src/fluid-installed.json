@@ -1,0 +1,43 @@
+{
+  "components": [
+    "button",
+    "utils",
+    "font-weight",
+    "shape-context",
+    "icon-context",
+    "size-context",
+    "switch",
+    "springs",
+    "card",
+    "use-proximity-hover",
+    "badge",
+    "dialog",
+    "surface-context",
+    "surface-classes",
+    "input-group",
+    "tabs",
+    "checkbox-group",
+    "use-merge-split",
+    "radio-group",
+    "tooltip",
+    "slider",
+    "elevated",
+    "color-picker"
+  ],
+  "npmDeps": [
+    "framer-motion",
+    "@radix-ui/react-slot",
+    "class-variance-authority",
+    "lucide-react",
+    "clsx",
+    "tailwind-merge",
+    "@radix-ui/react-switch",
+    "@radix-ui/react-dialog",
+    "@base-ui/react",
+    "@radix-ui/react-tabs",
+    "@radix-ui/react-checkbox",
+    "@radix-ui/react-radio-group",
+    "@radix-ui/react-tooltip",
+    "@radix-ui/react-slider"
+  ]
+}

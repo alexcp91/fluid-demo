@@ -1,0 +1,180 @@
+{
+  "id": "welcome",
+  "meta": {
+    "subject": "You’re invited to Fluid Launch Week",
+    "previewText": "A week of springy presses, proximity hover, and new blocks.",
+    "width": "600",
+    "showPreheader": true,
+    "fromName": "Fluid"
+  },
+  "blocks": [
+    {
+      "id": "header-20",
+      "chrome": {
+        "padding": "md",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "header",
+      "brand": "Fluid",
+      "tagline": "Functionalism",
+      "showLogo": true
+    },
+    {
+      "id": "heading-21",
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "heading",
+      "text": "Design systems that feel alive",
+      "size": "lg"
+    },
+    {
+      "id": "paragraph-22",
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "paragraph",
+      "text": "Ship controls with spring physics, proximity hover, and a size ladder that stays consistent from toolbar to settings rail.",
+      "muted": false
+    },
+    {
+      "id": "frame-19",
+      "type": "frame",
+      "chrome": {
+        "padding": "none",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "direction": "row",
+      "gap": "md",
+      "widths": [
+        50,
+        50
+      ],
+      "children": [
+        {
+          "id": "frame-17",
+          "type": "frame",
+          "chrome": {
+            "padding": "sm",
+            "background": "none",
+            "visible": true,
+            "align": "left"
+          },
+          "direction": "column",
+          "gap": "sm",
+          "widths": [],
+          "children": [
+            {
+              "id": "image-13",
+              "chrome": {
+                "padding": "sm",
+                "background": "none",
+                "visible": true,
+                "align": "center"
+              },
+              "type": "image",
+              "alt": "Product A",
+              "caption": "Spring press",
+              "href": "",
+              "fit": "cover",
+              "rounded": true
+            },
+            {
+              "id": "heading-15",
+              "chrome": {
+                "padding": "sm",
+                "background": "none",
+                "visible": true,
+                "align": "left"
+              },
+              "type": "heading",
+              "text": "Controls",
+              "size": "md"
+            }
+          ]
+        },
+        {
+          "id": "frame-18",
+          "type": "frame",
+          "chrome": {
+            "padding": "sm",
+            "background": "none",
+            "visible": true,
+            "align": "left"
+          },
+          "direction": "column",
+          "gap": "sm",
+          "widths": [],
+          "children": [
+            {
+              "id": "image-14",
+              "chrome": {
+                "padding": "sm",
+                "background": "none",
+                "visible": true,
+                "align": "center"
+              },
+              "type": "image",
+              "alt": "Product B",
+              "caption": "Proximity hover",
+              "href": "",
+              "fit": "cover",
+              "rounded": true
+            },
+            {
+              "id": "heading-16",
+              "chrome": {
+                "padding": "sm",
+                "background": "none",
+                "visible": true,
+                "align": "left"
+              },
+              "type": "heading",
+              "text": "Motion",
+              "size": "md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "button-23",
+      "chrome": {
+        "padding": "md",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "button",
+      "label": "Get started",
+      "url": "https://example.com",
+      "style": "filled",
+      "fullWidth": false
+    },
+    {
+      "id": "footer-24",
+      "chrome": {
+        "padding": "md",
+        "background": "none",
+        "visible": true,
+        "align": "center"
+      },
+      "type": "footer",
+      "company": "Fluid Functionalism",
+      "address": "San Francisco, CA",
+      "showUnsubscribe": true,
+      "showSocial": false
+    }
+  ],
+  "updatedAt": "2026-08-12T05:56:39.903Z"
+}
