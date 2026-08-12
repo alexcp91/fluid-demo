@@ -1,15 +1,33 @@
 {
+  "version": 2,
   "id": "welcome-series",
   "meta": {
-    "subject": "You\u2019re invited to Fluid Launch Week",
+    "subject": "You’re invited to Fluid Launch Week",
     "previewText": "A week of springy presses, proximity hover, and new blocks.",
     "width": "600",
     "showPreheader": true,
     "fromName": "Fluid"
   },
-  "blocks": [
-    {
+  "root": "body-8af61304-3b06-4dba-9ee7-26b6d737e2f3",
+  "nodes": {
+    "body-8af61304-3b06-4dba-9ee7-26b6d737e2f3": {
+      "id": "body-8af61304-3b06-4dba-9ee7-26b6d737e2f3",
+      "parent": null,
+      "order": "7fffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "none",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "body"
+    },
+    "header-20": {
       "id": "header-20",
+      "parent": "body-8af61304-3b06-4dba-9ee7-26b6d737e2f3",
+      "order": "7fffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "md",
         "background": "none",
@@ -21,8 +39,11 @@
       "tagline": "Functionalism",
       "showLogo": true
     },
-    {
+    "heading-21": {
       "id": "heading-21",
+      "parent": "body-8af61304-3b06-4dba-9ee7-26b6d737e2f3",
+      "order": "bfffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "sm",
         "background": "none",
@@ -33,8 +54,11 @@
       "text": "Design systems that feel alive",
       "size": "lg"
     },
-    {
+    "paragraph-22": {
       "id": "paragraph-22",
+      "parent": "body-8af61304-3b06-4dba-9ee7-26b6d737e2f3",
+      "order": "dfffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "sm",
         "background": "none",
@@ -45,110 +69,120 @@
       "text": "Ship controls with spring physics, proximity hover, and a size ladder that stays consistent from toolbar to settings rail.",
       "muted": false
     },
-    {
+    "frame-19": {
       "id": "frame-19",
-      "type": "frame",
+      "parent": "body-8af61304-3b06-4dba-9ee7-26b6d737e2f3",
+      "order": "efffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "none",
         "background": "none",
         "visible": true,
         "align": "left"
       },
-      "direction": "row",
+      "type": "row",
       "gap": "md",
-      "widths": [
-        50,
-        50
-      ],
-      "children": [
-        {
-          "id": "frame-17",
-          "type": "frame",
-          "chrome": {
-            "padding": "sm",
-            "background": "none",
-            "visible": true,
-            "align": "left"
-          },
-          "direction": "column",
-          "gap": "sm",
-          "widths": [],
-          "children": [
-            {
-              "id": "image-13",
-              "chrome": {
-                "padding": "sm",
-                "background": "none",
-                "visible": true,
-                "align": "center"
-              },
-              "type": "image",
-              "alt": "Product A",
-              "caption": "Spring press",
-              "href": "",
-              "fit": "cover",
-              "rounded": true
-            },
-            {
-              "id": "heading-15",
-              "chrome": {
-                "padding": "sm",
-                "background": "none",
-                "visible": true,
-                "align": "left"
-              },
-              "type": "heading",
-              "text": "Controls",
-              "size": "md"
-            }
-          ]
-        },
-        {
-          "id": "frame-18",
-          "type": "frame",
-          "chrome": {
-            "padding": "sm",
-            "background": "none",
-            "visible": true,
-            "align": "left"
-          },
-          "direction": "column",
-          "gap": "sm",
-          "widths": [],
-          "children": [
-            {
-              "id": "image-14",
-              "chrome": {
-                "padding": "sm",
-                "background": "none",
-                "visible": true,
-                "align": "center"
-              },
-              "type": "image",
-              "alt": "Product B",
-              "caption": "Proximity hover",
-              "href": "",
-              "fit": "cover",
-              "rounded": true
-            },
-            {
-              "id": "heading-16",
-              "chrome": {
-                "padding": "sm",
-                "background": "none",
-                "visible": true,
-                "align": "left"
-              },
-              "type": "heading",
-              "text": "Motion",
-              "size": "md"
-            }
-          ]
-        }
-      ]
+      "stackOnMobile": true
     },
-    {
+    "frame-17": {
+      "id": "frame-17",
+      "parent": "frame-19",
+      "order": "7fffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "column",
+      "vAlign": "top"
+    },
+    "image-13": {
+      "id": "image-13",
+      "parent": "frame-17",
+      "order": "7fffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "center"
+      },
+      "type": "image",
+      "alt": "Product A",
+      "caption": "Spring press",
+      "href": "",
+      "fit": "cover",
+      "rounded": true
+    },
+    "heading-15": {
+      "id": "heading-15",
+      "parent": "frame-17",
+      "order": "bfffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "heading",
+      "text": "Controls",
+      "size": "md"
+    },
+    "frame-18": {
+      "id": "frame-18",
+      "parent": "frame-19",
+      "order": "bfffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "column",
+      "vAlign": "top"
+    },
+    "image-14": {
+      "id": "image-14",
+      "parent": "frame-18",
+      "order": "7fffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "center"
+      },
+      "type": "image",
+      "alt": "Product B",
+      "caption": "Proximity hover",
+      "href": "",
+      "fit": "cover",
+      "rounded": true
+    },
+    "heading-16": {
+      "id": "heading-16",
+      "parent": "frame-18",
+      "order": "bfffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "heading",
+      "text": "Motion",
+      "size": "md"
+    },
+    "button-23": {
       "id": "button-23",
+      "parent": "body-8af61304-3b06-4dba-9ee7-26b6d737e2f3",
+      "order": "f7ffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "md",
         "background": "none",
@@ -161,8 +195,11 @@
       "style": "filled",
       "fullWidth": false
     },
-    {
+    "footer-24": {
       "id": "footer-24",
+      "parent": "body-8af61304-3b06-4dba-9ee7-26b6d737e2f3",
+      "order": "fbffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "md",
         "background": "none",
@@ -175,7 +212,7 @@
       "showUnsubscribe": true,
       "showSocial": false
     }
-  ],
+  },
   "updatedAt": "2026-08-10T14:00:00.000Z",
   "name": "Welcome series"
 }

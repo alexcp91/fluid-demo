@@ -4,26 +4,27 @@ import { useEmailStore } from "@/email/store"
 import { readPaletteBlockType } from "./palette-drag"
 
 /**
- * Drop target between canvas blocks (or empty canvas). Visible only while a
+ * Drop target between canvas blocks (or empty container). Visible only while a
  * palette block type is being dragged.
  */
 export function DropSlot({
+  into,
   index,
   empty,
 }: {
+  into: string
   index: number
   /** Tall empty-canvas drop area */
   empty?: boolean
 }) {
   const paletteDragType = useEmailStore((s) => s.paletteDragType)
-  const insertBlockAt = useEmailStore((s) => s.insertBlockAt)
+  const insertLeafAt = useEmailStore((s) => s.insertLeafAt)
   const setPaletteDragType = useEmailStore((s) => s.setPaletteDragType)
   const [over, setOver] = useState(false)
 
   if (!paletteDragType) return null
 
   function accept(e: DragEvent) {
-    // Prefer store flag over MIME in types[] — Safari hides custom types mid-drag.
     e.preventDefault()
     e.dataTransfer.dropEffect = "copy"
     return true
@@ -33,6 +34,7 @@ export function DropSlot({
     <div
       role="presentation"
       data-drop-slot
+      data-drop-into={into}
       data-drop-index={index}
       onDragEnter={(e) => {
         if (accept(e)) setOver(true)
@@ -50,7 +52,7 @@ export function DropSlot({
         setOver(false)
         const type =
           readPaletteBlockType(e.dataTransfer) ?? paletteDragType
-        if (type) insertBlockAt(type, index)
+        if (type) insertLeafAt(type, into, index)
         setPaletteDragType(null)
       }}
       className={cn(

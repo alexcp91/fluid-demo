@@ -7,6 +7,7 @@ import {
   EmailTemplateSchema,
 } from "./src/email/schema.ts"
 import { exportToHtml } from "./src/email/export-html.ts"
+import { parseDocument } from "./src/email/migrate.ts"
 
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -83,12 +84,15 @@ export function emailApiPlugin(rootDir: string): Plugin {
         const raw = JSON.parse(
           fs.readFileSync(path.join(emailsDir, f), "utf8")
         )
-        const parsed = EmailDocumentSchema.safeParse(raw)
-        if (!parsed.success) return null
-        return {
-          id: parsed.data.id,
-          subject: parsed.data.meta.subject,
-          updatedAt: parsed.data.updatedAt,
+        try {
+          const parsed = parseDocument(raw)
+          return {
+            id: parsed.id,
+            subject: parsed.meta.subject,
+            updatedAt: parsed.updatedAt,
+          }
+        } catch {
+          return null
         }
       })
       .filter((item): item is NonNullable<typeof item> => Boolean(item))
@@ -99,19 +103,32 @@ export function emailApiPlugin(rootDir: string): Plugin {
     const file = path.join(emailsDir, `${id}.json`)
     if (!fs.existsSync(file)) return null
     const raw = JSON.parse(fs.readFileSync(file, "utf8"))
-    return EmailDocumentSchema.parse(raw)
+    return parseDocument(raw)
   }
 
   function writeEmail(id: string, doc: unknown) {
     ensureDir(emailsDir)
     const parsed = EmailDocumentSchema.parse({
-      ...(doc as object),
+      ...parseDocument(doc),
       id,
       updatedAt: new Date().toISOString(),
     })
     const file = path.join(emailsDir, `${id}.json`)
     fs.writeFileSync(file, JSON.stringify(parsed, null, 2) + "\n", "utf8")
     return parsed
+  }
+
+  function templateNameFrom(raw: unknown, fallback: string): string {
+    if (
+      typeof raw === "object" &&
+      raw !== null &&
+      "name" in raw &&
+      typeof (raw as { name: unknown }).name === "string" &&
+      (raw as { name: string }).name.trim()
+    ) {
+      return (raw as { name: string }).name.trim()
+    }
+    return fallback
   }
 
   function listTemplates() {
@@ -123,13 +140,16 @@ export function emailApiPlugin(rootDir: string): Plugin {
         const raw = JSON.parse(
           fs.readFileSync(path.join(templatesDir, f), "utf8")
         )
-        const parsed = EmailTemplateSchema.safeParse(raw)
-        if (!parsed.success) return null
-        return {
-          id: parsed.data.id,
-          name: parsed.data.name,
-          subject: parsed.data.meta.subject,
-          updatedAt: parsed.data.updatedAt,
+        try {
+          const doc = parseDocument(raw)
+          return {
+            id: doc.id,
+            name: templateNameFrom(raw, doc.meta.subject || "Untitled template"),
+            subject: doc.meta.subject,
+            updatedAt: doc.updatedAt,
+          }
+        } catch {
+          return null
         }
       })
       .filter((item): item is NonNullable<typeof item> => Boolean(item))
@@ -140,14 +160,23 @@ export function emailApiPlugin(rootDir: string): Plugin {
     const file = path.join(templatesDir, `${id}.json`)
     if (!fs.existsSync(file)) return null
     const raw = JSON.parse(fs.readFileSync(file, "utf8"))
-    return EmailTemplateSchema.parse(raw)
+    const doc = parseDocument(raw)
+    return EmailTemplateSchema.parse({
+      ...doc,
+      name: templateNameFrom(raw, doc.meta.subject || "Untitled template"),
+    })
   }
 
   function writeTemplate(id: string, doc: unknown) {
     ensureDir(templatesDir)
+    const rawName = templateNameFrom(
+      doc,
+      "Untitled template"
+    )
     const parsed = EmailTemplateSchema.parse({
-      ...(doc as object),
+      ...parseDocument(doc),
       id,
+      name: rawName,
       updatedAt: new Date().toISOString(),
     })
     const file = path.join(templatesDir, `${id}.json`)
