@@ -8,6 +8,8 @@ import {
   EyeOff,
   LayoutTemplate,
   Link2,
+  Maximize2,
+  Square,
   Type,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +21,7 @@ import type {
   Align,
   BlockBg,
   BlockChrome,
+  ButtonStyle,
   EmailNode,
   ImageFit,
   Spacing,
@@ -271,20 +274,38 @@ function ContentInspector({ node }: { node: EmailNode }) {
   let fields: ReactNode = null
 
   if (node.type === "header") {
-    fields = (
+    return (
       <>
-        <CompactField
-          index={0}
-          label="Brand"
-          value={node.brand}
-          onChange={(brand) => updateNode(node.id, node.type, { brand })}
-        />
-        <CompactField
-          index={1}
-          label="Tagline"
-          value={node.tagline}
-          onChange={(tagline) => updateNode(node.id, node.type, { tagline })}
-        />
+        <InspectorSection title="Content" icon={Type}>
+          <InspectorFields>
+            <CompactField
+              index={0}
+              label="Brand"
+              value={node.brand}
+              onChange={(brand) => updateNode(node.id, node.type, { brand })}
+            />
+            <CompactField
+              index={1}
+              label="Tagline"
+              value={node.tagline}
+              onChange={(tagline) =>
+                updateNode(node.id, node.type, { tagline })
+              }
+            />
+          </InspectorFields>
+        </InspectorSection>
+        <InspectorSection title="Logo" icon={Square}>
+          <PropRow label="Mark">
+            <BoolChip
+              label={node.showLogo ? "Shown" : "Hidden"}
+              checked={node.showLogo}
+              onChange={(showLogo) =>
+                updateNode(node.id, node.type, { showLogo })
+              }
+              icon={node.showLogo ? Eye : EyeOff}
+            />
+          </PropRow>
+        </InspectorSection>
       </>
     )
   } else if (node.type === "heading" || node.type === "paragraph") {
@@ -339,20 +360,48 @@ function ContentInspector({ node }: { node: EmailNode }) {
       </>
     )
   } else if (node.type === "footer") {
-    fields = (
+    return (
       <>
-        <CompactField
-          index={0}
-          label="Company"
-          value={node.company}
-          onChange={(company) => updateNode(node.id, node.type, { company })}
-        />
-        <CompactField
-          index={1}
-          label="Address"
-          value={node.address}
-          onChange={(address) => updateNode(node.id, node.type, { address })}
-        />
+        <InspectorSection title="Content" icon={Type}>
+          <InspectorFields>
+            <CompactField
+              index={0}
+              label="Company"
+              value={node.company}
+              onChange={(company) =>
+                updateNode(node.id, node.type, { company })
+              }
+            />
+            <CompactField
+              index={1}
+              label="Address"
+              value={node.address}
+              onChange={(address) =>
+                updateNode(node.id, node.type, { address })
+              }
+            />
+          </InspectorFields>
+        </InspectorSection>
+        <InspectorSection title="Links" icon={Link2}>
+          <PropRow label="Unsub">
+            <BoolChip
+              label={node.showUnsubscribe ? "On" : "Off"}
+              checked={node.showUnsubscribe}
+              onChange={(showUnsubscribe) =>
+                updateNode(node.id, node.type, { showUnsubscribe })
+              }
+            />
+          </PropRow>
+          <PropRow label="Social">
+            <BoolChip
+              label={node.showSocial ? "On" : "Off"}
+              checked={node.showSocial}
+              onChange={(showSocial) =>
+                updateNode(node.id, node.type, { showSocial })
+              }
+            />
+          </PropRow>
+        </InspectorSection>
       </>
     )
   }
@@ -401,6 +450,38 @@ function NodeStyleInspector({ node }: { node: EmailNode }) {
         </PropRow>
       </InspectorSection>
     )
+  } else if (node.type === "button") {
+    extra = (
+      <InspectorSection title="Button" icon={Link2}>
+        <PropRow label="Width">
+          <SegmentGroup
+            value={node.fullWidth ? "max" : "auto"}
+            onChange={(value) =>
+              updateNode(node.id, node.type, { fullWidth: value === "max" })
+            }
+            options={[
+              { value: "auto", label: "AUTO" },
+              { value: "max", label: "MAX", icon: Maximize2 },
+            ]}
+          />
+        </PropRow>
+        <PropRow label="Variant">
+          <SegmentGroup
+            value={node.style}
+            onChange={(style) =>
+              updateNode(node.id, node.type, {
+                style: style as ButtonStyle,
+              })
+            }
+            options={[
+              { value: "filled", label: "Fill" },
+              { value: "outline", label: "Line" },
+              { value: "text", label: "Text" },
+            ]}
+          />
+        </PropRow>
+      </InspectorSection>
+    )
   } else if (node.type === "image") {
     extra = (
       <InspectorSection title="Image" icon={Droplet}>
@@ -414,6 +495,16 @@ function NodeStyleInspector({ node }: { node: EmailNode }) {
               { value: "cover", label: "Cover" },
               { value: "contain", label: "Contain" },
             ]}
+          />
+        </PropRow>
+        <PropRow label="Corners">
+          <BoolChip
+            label={node.rounded ? "Round" : "Square"}
+            checked={node.rounded}
+            onChange={(rounded) =>
+              updateNode(node.id, node.type, { rounded })
+            }
+            icon={Square}
           />
         </PropRow>
       </InspectorSection>

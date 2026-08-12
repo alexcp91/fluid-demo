@@ -83,7 +83,6 @@ export function useCanvasSortable(
 
     sortable.on("sortable:sort", (event) => {
       const source = event.dragEvent.source as HTMLElement | null
-      const over = event.dragEvent.over as HTMLElement | null
       const overContainer = event.dragEvent.overContainer as HTMLElement | null
       if (!source || !overContainer) return
 
@@ -110,19 +109,6 @@ export function useCanvasSortable(
         kind === "column"
       ) {
         event.cancel()
-        return
-      }
-
-      if (sourceType === "row") return
-
-      // Leaves crossing row chrome toward another column.
-      if (kind === "body") {
-        if (
-          over?.dataset.nodeType === "row" ||
-          over?.closest?.("[data-node-type='row']")
-        ) {
-          event.cancel()
-        }
       }
     })
 

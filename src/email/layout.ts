@@ -45,8 +45,9 @@ function compileNode(document: EmailDocument, node: EmailNode): LayoutChild | nu
   if (!node.chrome.visible) return null
   if (node.type === "row") {
     const columns = childrenOf(document, node.id as ContainerId)
-      .filter((child): child is Extract<EmailNode, { type: "column" }> =>
-        child.type === "column"
+      .filter(
+        (child): child is Extract<EmailNode, { type: "column" }> =>
+          child.type === "column" && child.chrome.visible
       )
       .map((column) => {
         const kids = childrenOf(document, column.id as ContainerId)
