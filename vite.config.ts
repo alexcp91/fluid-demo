@@ -9,6 +9,12 @@ import { emailApiPlugin } from "./vite-plugin-email-api.ts"
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+    strictPort: true,
+    allowedHosts: true,
+  },
   plugins: [
     tanstackRouter({
       target: "react",
