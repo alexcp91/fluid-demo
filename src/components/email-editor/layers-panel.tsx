@@ -16,15 +16,16 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip } from "@/components/ui/tooltip"
 import { useEmailStore } from "@/email/store"
+import { childrenOf, nodeAt, walk } from "@/email/tree"
 import { DragHandle } from "./drag-handle"
 import { PALETTE_BLOCK_MIME } from "./palette-drag"
 import { useSortableBlocks } from "./use-sortable-blocks"
 import {
   BLOCK_LABELS,
   BLOCK_TYPES,
-  isFrame,
   type BlockType,
-  type EmailBlock,
+  type EmailNode,
+  nodeLabel,
 } from "./types"
 
 const BLOCK_ICONS: Record<BlockType, LucideIcon> = {
@@ -33,36 +34,33 @@ const BLOCK_ICONS: Record<BlockType, LucideIcon> = {
   heading: Type,
   paragraph: AlignLeft,
   button: MousePointerClick,
-  frame: Columns2,
   footer: Footprints,
 }
 
+function iconForNode(node: EmailNode): LucideIcon {
+  if (node.type === "row" || node.type === "column") return Columns2
+  if (node.type === "body") return AlignLeft
+  return BLOCK_ICONS[node.type]
+}
+
 function LayerRow({
-  block,
+  node,
   depth,
   selected,
   onSelect,
 }: {
-  block: EmailBlock
+  node: EmailNode
   depth: number
   selected: string | null
   onSelect: (id: string) => void
 }) {
-  const Icon = BLOCK_ICONS[block.type]
-  const isSelected = selected === block.id
-  const hidden = !block.chrome.visible
-  const label =
-    block.type === "frame"
-      ? block.direction === "row"
-        ? "Row"
-        : "Column"
-      : BLOCK_LABELS[block.type]
+  const Icon = iconForNode(node)
+  const isSelected = selected === node.id
+  const hidden = !node.chrome.visible
 
   return (
-    <>
       <li
-        key={block.id}
-        data-block-id={block.id}
+        data-block-id={node.id}
         data-sortable-item={depth === 0 ? true : undefined}
         className={cn(
           "flex items-center gap-1 rounded-lg pr-1 outline-none transition-colors duration-80",
@@ -76,14 +74,16 @@ function LayerRow({
         {depth === 0 ? <DragHandle /> : <span className="w-4 shrink-0" />}
         <button
           type="button"
-          onClick={() => onSelect(block.id)}
+          onClick={() => onSelect(node.id)}
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1.5 pr-2 text-left outline-none",
             "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)]"
           )}
         >
           <Icon size={14} strokeWidth={isSelected ? 2 : 1.5} />
-          <span className="flex-1 truncate text-[12px]">{label}</span>
+          <span className="flex-1 truncate text-[12px]">
+            {nodeLabel(node.type)}
+          </span>
           {hidden && (
             <span className="text-[10px] uppercase tracking-wide opacity-70">
               Hidden
@@ -91,36 +91,35 @@ function LayerRow({
           )}
         </button>
       </li>
-      {isFrame(block)
-        ? block.children.map((child) => (
-            <LayerRow
-              key={child.id}
-              block={child}
-              depth={depth + 1}
-              selected={selected}
-              onSelect={onSelect}
-            />
-          ))
-        : null}
-    </>
   )
 }
 
 export function LayersPanel() {
   const listRef = useRef<HTMLUListElement>(null)
   const suppressClickRef = useRef(false)
-  const blocks = useEmailStore((s) => s.doc.blocks)
+  const doc = useEmailStore((s) => s.doc)
   const selected = useEmailStore((s) => s.selectedId)
   const select = useEmailStore((s) => s.select)
-  const insertBlock = useEmailStore((s) => s.insertBlock)
-  const insertProductRow = useEmailStore((s) => s.insertProductRow)
-  const removeBlock = useEmailStore((s) => s.removeBlock)
-  const reorderBlocks = useEmailStore((s) => s.reorderBlocks)
+  const insertLeaf = useEmailStore((s) => s.insertLeaf)
+  const insertRow = useEmailStore((s) => s.insertRow)
+  const removeNode = useEmailStore((s) => s.removeNode)
+  const reorderChildren = useEmailStore((s) => s.reorderChildren)
   const setPaletteDragType = useEmailStore((s) => s.setPaletteDragType)
+  const rootChildren = childrenOf(doc, doc.root)
+  const layers = [...walk(doc)]
+  const selectedNode = nodeAt(doc, selected)
+  const selectedParent =
+    selectedNode?.parent === null ? undefined : nodeAt(doc, selectedNode?.parent ?? null)
+  const insertionTarget =
+    selectedNode?.type === "column"
+      ? selectedNode.id
+      : selectedParent?.type === "column"
+        ? selectedParent.id
+        : doc.root
 
   useSortableBlocks(listRef, {
-    order: blocks.map((b) => b.id),
-    onReorder: reorderBlocks,
+    order: rootChildren.map((node) => node.id),
+    onReorder: (orderedIds) => reorderChildren(doc.root, orderedIds),
   })
 
   return (
@@ -131,7 +130,7 @@ export function LayersPanel() {
             Layers
           </h2>
           <Badge variant="dot" color="gray">
-            {blocks.length}
+            {layers.length}
           </Badge>
         </header>
 
@@ -163,7 +162,7 @@ export function LayersPanel() {
                       suppressClickRef.current = false
                       return
                     }
-                    insertBlock(type)
+                    insertLeaf(type, insertionTarget)
                   }}
                   className={cn(
                     "flex cursor-grab items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] text-muted-foreground outline-none transition-colors duration-80 active:cursor-grabbing",
@@ -182,7 +181,7 @@ export function LayersPanel() {
             variant="secondary"
             className="w-full justify-start"
             leadingIcon={Columns2}
-            onClick={() => insertProductRow({ columns: 2 })}
+            onClick={() => insertRow(2, insertionTarget)}
           >
             2-column row
           </Button>
@@ -195,18 +194,18 @@ export function LayersPanel() {
         </p>
 
         <ul ref={listRef} className="email-sortable flex flex-col gap-0.5">
-          {blocks.map((block) => (
+          {layers.map(({ node, depth }) => (
             <LayerRow
-              key={block.id}
-              block={block}
-              depth={0}
+              key={node.id}
+              node={node}
+              depth={depth}
               selected={selected}
               onSelect={select}
             />
           ))}
         </ul>
 
-        {blocks.length === 0 && (
+        {layers.length === 0 && (
           <p className="px-2 text-[11px] text-muted-foreground">
             No blocks yet — add one above.
           </p>
@@ -220,7 +219,7 @@ export function LayersPanel() {
                 variant="ghost"
                 className="w-full justify-start text-muted-foreground"
                 leadingIcon={Trash2}
-                onClick={() => removeBlock(selected)}
+                onClick={() => removeNode(selected)}
               >
                 Delete block
               </Button>

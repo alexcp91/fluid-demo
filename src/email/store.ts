@@ -1,29 +1,31 @@
 import { create } from "zustand"
 import {
-  cloneBlock,
-  createBlock as makeBlock,
-  findBlock,
-  insertBlock as insertBlockHelper,
-  insertBlockAtIndex as insertBlockAtIndexHelper,
-  insertIntoFrame as insertIntoFrameHelper,
-  insertProductRow as insertProductRowHelper,
-  removeBlock as removeBlockHelper,
-  reorderBlocks as reorderBlocksHelper,
-  updateBlock as updateBlockHelper,
-  createInitialDocument,
-} from "@/components/email-editor/types"
+  applyEdit,
+  coalesceKey as editCoalesceKey,
+  type EmailEdit,
+  type PatchFor,
+} from "@/email/edit"
 import {
   pushPast,
   takeRedo,
   takeUndo,
   type HistorySnapshot,
 } from "@/email/history"
+import { createInitialDocument, parseDocument } from "@/email/migrate"
 import {
   EmailDocumentSchema,
   type BlockType,
   type DeviceMode,
   type EmailDocument,
+  type EmailNode,
+  type NodeKind,
 } from "@/email/schema"
+import {
+  beforeIdAtIndex,
+  childrenOf,
+  nodeAt,
+} from "@/email/tree"
+import type { ContainerId, NodeId } from "@/email/ids"
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error"
 
@@ -34,26 +36,37 @@ interface EmailEditorState {
   dirty: boolean
   saveStatus: SaveStatus
   loadError: string | null
-  /** Ephemeral: block type being dragged from the Add block palette. */
   paletteDragType: BlockType | null
   past: HistorySnapshot[]
   future: HistorySnapshot[]
-  /** When set, consecutive commits with the same key share one undo step. */
   coalesceKey: string | null
 
-  setDoc: (doc: EmailDocument) => void
+  dispatch: (edit: EmailEdit) => boolean
   setMeta: (meta: Partial<EmailDocument["meta"]>) => void
-  updateBlock: (id: string, patch: Record<string, unknown>) => void
-  insertBlock: (type: BlockType, afterId?: string | null) => string
-  insertBlockAt: (type: BlockType, index: number) => string
-  insertIntoFrame: (frameId: string, type: BlockType, index?: number) => string
-  insertProductRow: (options?: {
-    columns?: number
-    afterId?: string | null
-  }) => string
-  duplicateBlock: (id: string) => string | null
-  removeBlock: (id: string) => void
-  reorderBlocks: (orderedIds: string[]) => void
+  updateNode: <K extends NodeKind>(
+    id: string,
+    nodeType: K,
+    patch: PatchFor<K>
+  ) => boolean
+  setText: (id: string, html: string) => boolean
+  insertLeaf: (
+    type: BlockType,
+    into: string,
+    before?: string | null
+  ) => string | null
+  insertLeafAt: (
+    type: BlockType,
+    into: string,
+    index: number
+  ) => string | null
+  insertRow: (
+    columns: 1 | 2 | 3,
+    into: string,
+    before?: string | null
+  ) => string | null
+  duplicateNode: (id: string) => string | null
+  removeNode: (id: string) => void
+  reorderChildren: (parent: string, orderedIds: string[]) => void
   select: (id: string | null) => void
   setDevice: (device: DeviceMode) => void
   setPaletteDragType: (type: BlockType | null) => void
@@ -64,10 +77,6 @@ interface EmailEditorState {
   save: () => Promise<void>
 }
 
-function touch(doc: EmailDocument): EmailDocument {
-  return { ...doc, updatedAt: new Date().toISOString() }
-}
-
 function snapshot(state: {
   doc: EmailDocument
   selectedId: string | null
@@ -75,32 +84,12 @@ function snapshot(state: {
   return { doc: state.doc, selectedId: state.selectedId }
 }
 
-type Mutator = (state: EmailEditorState) => Partial<EmailEditorState>
+function asContainerId(id: string): ContainerId {
+  return id as ContainerId
+}
 
-function commit(
-  get: () => EmailEditorState,
-  set: (
-    partial:
-      | Partial<EmailEditorState>
-      | ((s: EmailEditorState) => Partial<EmailEditorState>)
-  ) => void,
-  mutate: Mutator,
-  coalesceKey: string | null = null
-) {
-  const state = get()
-  const snap = snapshot(state)
-  const sameCoalesce =
-    coalesceKey !== null && coalesceKey === state.coalesceKey
-  const past = sameCoalesce ? state.past : pushPast(state.past, snap)
-  const next = mutate(state)
-  set({
-    ...next,
-    past,
-    future: [],
-    coalesceKey,
-    dirty: true,
-    saveStatus: "idle",
-  })
+function asNodeId(id: string): NodeId {
+  return id as NodeId
 }
 
 export const useEmailStore = create<EmailEditorState>((set, get) => ({
@@ -115,101 +104,130 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
   future: [],
   coalesceKey: null,
 
-  setDoc: (doc) => {
-    commit(get, set, () => ({ doc: touch(doc) }))
+  dispatch: (edit) => {
+    const state = get()
+    const outcome = applyEdit(state.doc, edit)
+    if (!outcome.ok) return false
+    if (!outcome.changed) {
+      if (outcome.focus && outcome.focus !== state.selectedId)
+        set({ selectedId: outcome.focus, coalesceKey: null })
+      return true
+    }
+    const key = editCoalesceKey(edit)
+    const sameCoalesce = key !== null && key === state.coalesceKey
+    const past = sameCoalesce
+      ? state.past
+      : pushPast(state.past, snapshot(state))
+    set({
+      doc: outcome.doc,
+      selectedId:
+        outcome.focus !== undefined && outcome.focus !== null
+          ? outcome.focus
+          : state.selectedId,
+      past,
+      future: [],
+      coalesceKey: key,
+      dirty: true,
+      saveStatus: "idle",
+    })
+    return true
   },
 
   setMeta: (meta) => {
-    commit(
-      get,
-      set,
-      (s) => ({
-        doc: touch({ ...s.doc, meta: { ...s.doc.meta, ...meta } }),
-      }),
-      "meta"
-    )
+    get().dispatch({ kind: "setMeta", patch: meta })
   },
 
-  updateBlock: (id, patch) => {
-    commit(
-      get,
-      set,
-      (s) => ({
-        doc: touch(updateBlockHelper(s.doc, id, patch)),
-      }),
-      `update:${id}`
-    )
-  },
+  updateNode: (id, nodeType, patch) =>
+    get().dispatch({
+      kind: "editNode",
+      nodeType,
+      node: asNodeId(id),
+      patch,
+    } as EmailEdit),
 
-  insertBlock: (type, afterId = null) => {
-    const block = makeBlock(type)
-    commit(get, set, (s) => {
-      const after = afterId === undefined ? s.selectedId : afterId
-      return {
-        doc: touch(insertBlockHelper(s.doc, block, after)),
-        selectedId: block.id,
-      }
+  setText: (id, html) =>
+    get().dispatch({ kind: "setText", node: asNodeId(id), html }),
+
+  insertLeaf: (type, into, before = null) => {
+    const ok = get().dispatch({
+      kind: "insertLeaf",
+      type,
+      into: asContainerId(into),
+      before: before === null ? null : asNodeId(before),
     })
-    return block.id
+    return ok ? get().selectedId : null
   },
 
-  insertBlockAt: (type, index) => {
-    const block = makeBlock(type)
-    commit(get, set, (s) => ({
-      doc: touch(insertBlockAtIndexHelper(s.doc, block, index)),
-      selectedId: block.id,
-    }))
-    return block.id
+  insertLeafAt: (type, into, index) => {
+    const before = beforeIdAtIndex(
+      get().doc,
+      asContainerId(into),
+      index
+    )
+    return get().insertLeaf(type, into, before)
   },
 
-  insertIntoFrame: (frameId, type, index) => {
-    const block = makeBlock(type)
-    commit(get, set, (s) => ({
-      doc: touch(insertIntoFrameHelper(s.doc, frameId, block, index)),
-      selectedId: block.id,
-    }))
-    return block.id
+  insertRow: (columns, into, before = null) => {
+    const ok = get().dispatch({
+      kind: "insertRow",
+      columns,
+      into: asContainerId(into),
+      before: before === null ? null : asNodeId(before),
+    })
+    return ok ? get().selectedId : null
   },
 
-  insertProductRow: (options = {}) => {
-    let rowId = ""
-    commit(get, set, (s) => {
-      const result = insertProductRowHelper(s.doc, {
-        columns: options.columns,
-        afterId:
-          options.afterId === undefined ? s.selectedId : options.afterId,
+  duplicateNode: (id) => {
+    const ok = get().dispatch({ kind: "duplicate", node: asNodeId(id) })
+    return ok ? get().selectedId : null
+  },
+
+  removeNode: (id) => {
+    const state = get()
+    const ok = applyEdit(state.doc, {
+      kind: "remove",
+      node: asNodeId(id),
+    })
+    if (!ok.ok || !ok.changed) return
+    set({
+      doc: ok.doc,
+      selectedId: state.selectedId === id ? null : state.selectedId,
+      past: pushPast(state.past, snapshot(state)),
+      future: [],
+      coalesceKey: null,
+      dirty: true,
+      saveStatus: "idle",
+    })
+  },
+
+  reorderChildren: (parent, orderedIds) => {
+    const state = get()
+    let doc = state.doc
+    let changed = false
+    for (let index = 0; index < orderedIds.length; index += 1) {
+      const id = orderedIds[index]!
+      const before = orderedIds[index + 1] ?? null
+      const outcome = applyEdit(doc, {
+        kind: "move",
+        node: asNodeId(id),
+        into: asContainerId(parent),
+        before: before === null ? null : asNodeId(before),
       })
-      rowId = result.rowId
-      return {
-        doc: touch(result.doc),
-        selectedId: result.rowId,
+      if (!outcome.ok) continue
+      if (outcome.changed) {
+        doc = outcome.doc
+        changed = true
       }
+    }
+    if (!changed) return
+    set({
+      doc,
+      past: pushPast(state.past, snapshot(state)),
+      future: [],
+      coalesceKey: null,
+      dirty: true,
+      saveStatus: "idle",
     })
-    return rowId
-  },
-
-  duplicateBlock: (id) => {
-    const source = findBlock(get().doc, id)
-    if (!source) return null
-    const block = cloneBlock(source)
-    commit(get, set, (s) => ({
-      doc: touch(insertBlockHelper(s.doc, block, id)),
-      selectedId: block.id,
-    }))
-    return block.id
-  },
-
-  removeBlock: (id) => {
-    commit(get, set, (s) => ({
-      doc: touch(removeBlockHelper(s.doc, id)),
-      selectedId: s.selectedId === id ? null : s.selectedId,
-    }))
-  },
-
-  reorderBlocks: (orderedIds) => {
-    commit(get, set, (s) => ({
-      doc: touch(reorderBlocksHelper(s.doc, orderedIds)),
-    }))
   },
 
   select: (id) => set({ selectedId: id, coalesceKey: null }),
@@ -269,7 +287,7 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
         throw new Error(text || `Failed to load (${res.status})`)
       }
       const json = await res.json()
-      const doc = EmailDocumentSchema.parse(json)
+      const doc = parseDocument(json)
       set({
         doc,
         selectedId: null,
@@ -304,7 +322,7 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
         const text = await res.text()
         throw new Error(text || `Save failed (${res.status})`)
       }
-      const saved = EmailDocumentSchema.parse(await res.json())
+      const saved = parseDocument(await res.json())
       set({ doc: saved, dirty: false, saveStatus: "saved" })
     } catch (err) {
       set({ saveStatus: "error" })
@@ -313,8 +331,12 @@ export const useEmailStore = create<EmailEditorState>((set, get) => ({
   },
 }))
 
-export function useSelectedBlock() {
-  return useEmailStore((s) => findBlock(s.doc, s.selectedId))
+export function useSelectedNode(): EmailNode | undefined {
+  return useEmailStore((s) => nodeAt(s.doc, s.selectedId))
+}
+
+export function useRootChildren(): EmailNode[] {
+  return useEmailStore((s) => childrenOf(s.doc, s.doc.root))
 }
 
 export function useCanUndo() {

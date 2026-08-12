@@ -31,7 +31,7 @@ import {
   useCanRedo,
   useCanUndo,
   useEmailStore,
-  useSelectedBlock,
+  useSelectedNode,
 } from "@/email/store"
 import type { DeviceMode } from "@/email/schema"
 import { EmailCanvas } from "./canvas"
@@ -79,7 +79,7 @@ export function EmailEditor() {
   const redo = useEmailStore((s) => s.redo)
   const canUndo = useCanUndo()
   const canRedo = useCanRedo()
-  const selectedBlock = useSelectedBlock()
+  const selectedNode = useSelectedNode()
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewTab, setPreviewTab] = useState("preview")
   const [jsonOpen, setJsonOpen] = useState(false)
@@ -184,8 +184,8 @@ export function EmailEditor() {
           <p className="truncate text-caption text-muted-foreground">
             {loadError
               ? `Load error · ${loadError}`
-              : selectedBlock
-                ? `Selected · ${selectedBlock.type}`
+              : selectedNode
+                ? `Selected · ${selectedNode.type}`
                 : "Select a layer or add a block"}
           </p>
         </div>

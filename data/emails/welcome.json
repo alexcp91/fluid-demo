@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "id": "welcome",
   "meta": {
     "subject": "You’re invited to Fluid Launch Week",
@@ -7,11 +8,28 @@
     "showPreheader": true,
     "fromName": "Fluid"
   },
-  "blocks": [
-    {
-      "id": "header-20",
+  "root": "body-10ef815f-e22c-4e5e-8cb0-85fcbd979cd5",
+  "nodes": {
+    "body-10ef815f-e22c-4e5e-8cb0-85fcbd979cd5": {
+      "id": "body-10ef815f-e22c-4e5e-8cb0-85fcbd979cd5",
+      "parent": null,
+      "order": "7fffffffffff",
+      "flex": 1,
       "chrome": {
-        "padding": "md",
+        "padding": "none",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "body"
+    },
+    "header-1608fc37-9119-488f-ab20-933a6a69abbd": {
+      "id": "header-1608fc37-9119-488f-ab20-933a6a69abbd",
+      "parent": "body-10ef815f-e22c-4e5e-8cb0-85fcbd979cd5",
+      "order": "7fffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
         "background": "none",
         "visible": true,
         "align": "left"
@@ -21,8 +39,11 @@
       "tagline": "Functionalism",
       "showLogo": true
     },
-    {
-      "id": "heading-21",
+    "heading-d5c80b75-8005-4c49-8e60-f244147b20e0": {
+      "id": "heading-d5c80b75-8005-4c49-8e60-f244147b20e0",
+      "parent": "body-10ef815f-e22c-4e5e-8cb0-85fcbd979cd5",
+      "order": "bfffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "sm",
         "background": "none",
@@ -33,8 +54,11 @@
       "text": "Design systems that feel alive",
       "size": "lg"
     },
-    {
-      "id": "paragraph-22",
+    "paragraph-2b9977c5-eca8-4260-b3fe-7b8e218e9f69": {
+      "id": "paragraph-2b9977c5-eca8-4260-b3fe-7b8e218e9f69",
+      "parent": "body-10ef815f-e22c-4e5e-8cb0-85fcbd979cd5",
+      "order": "dfffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "sm",
         "background": "none",
@@ -45,112 +69,122 @@
       "text": "Ship controls with spring physics, proximity hover, and a size ladder that stays consistent from toolbar to settings rail.",
       "muted": false
     },
-    {
-      "id": "frame-19",
-      "type": "frame",
+    "row-90ad4388-40e0-4b6d-8a31-513131bd286e": {
+      "id": "row-90ad4388-40e0-4b6d-8a31-513131bd286e",
+      "parent": "body-10ef815f-e22c-4e5e-8cb0-85fcbd979cd5",
+      "order": "efffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "none",
         "background": "none",
         "visible": true,
         "align": "left"
       },
-      "direction": "row",
+      "type": "row",
       "gap": "md",
-      "widths": [
-        50,
-        50
-      ],
-      "children": [
-        {
-          "id": "frame-17",
-          "type": "frame",
-          "chrome": {
-            "padding": "sm",
-            "background": "none",
-            "visible": true,
-            "align": "left"
-          },
-          "direction": "column",
-          "gap": "sm",
-          "widths": [],
-          "children": [
-            {
-              "id": "image-13",
-              "chrome": {
-                "padding": "sm",
-                "background": "none",
-                "visible": true,
-                "align": "center"
-              },
-              "type": "image",
-              "alt": "Product A",
-              "caption": "Spring press",
-              "href": "",
-              "fit": "cover",
-              "rounded": true
-            },
-            {
-              "id": "heading-15",
-              "chrome": {
-                "padding": "sm",
-                "background": "none",
-                "visible": true,
-                "align": "left"
-              },
-              "type": "heading",
-              "text": "Controls",
-              "size": "md"
-            }
-          ]
-        },
-        {
-          "id": "frame-18",
-          "type": "frame",
-          "chrome": {
-            "padding": "sm",
-            "background": "none",
-            "visible": true,
-            "align": "left"
-          },
-          "direction": "column",
-          "gap": "sm",
-          "widths": [],
-          "children": [
-            {
-              "id": "image-14",
-              "chrome": {
-                "padding": "sm",
-                "background": "none",
-                "visible": true,
-                "align": "center"
-              },
-              "type": "image",
-              "alt": "Product B",
-              "caption": "Proximity hover",
-              "href": "",
-              "fit": "cover",
-              "rounded": true
-            },
-            {
-              "id": "heading-16",
-              "chrome": {
-                "padding": "sm",
-                "background": "none",
-                "visible": true,
-                "align": "left"
-              },
-              "type": "heading",
-              "text": "Motion",
-              "size": "md"
-            }
-          ]
-        }
-      ]
+      "stackOnMobile": true
     },
-    {
-      "id": "button-23",
+    "column-1a6c9f14-3616-4675-b38f-c47b6f861784": {
+      "id": "column-1a6c9f14-3616-4675-b38f-c47b6f861784",
+      "parent": "row-90ad4388-40e0-4b6d-8a31-513131bd286e",
+      "order": "7fffffffffff",
+      "flex": 1,
       "chrome": {
-        "padding": "md",
+        "padding": "none",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "column",
+      "vAlign": "top"
+    },
+    "column-7eb7d033-eb15-4901-b56d-33eec7643912": {
+      "id": "column-7eb7d033-eb15-4901-b56d-33eec7643912",
+      "parent": "row-90ad4388-40e0-4b6d-8a31-513131bd286e",
+      "order": "bfffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "none",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "column",
+      "vAlign": "top"
+    },
+    "image-3a079017-73fc-45ab-9ffc-c913fc56f5e5": {
+      "id": "image-3a079017-73fc-45ab-9ffc-c913fc56f5e5",
+      "parent": "column-1a6c9f14-3616-4675-b38f-c47b6f861784",
+      "order": "7fffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "image",
+      "alt": "Product A",
+      "caption": "Spring press",
+      "href": "",
+      "fit": "cover",
+      "rounded": true
+    },
+    "heading-02b6272e-be91-4416-9f9f-168e1706ea7a": {
+      "id": "heading-02b6272e-be91-4416-9f9f-168e1706ea7a",
+      "parent": "column-1a6c9f14-3616-4675-b38f-c47b6f861784",
+      "order": "bfffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "heading",
+      "text": "Controls",
+      "size": "md"
+    },
+    "image-8fd55050-69b4-4075-94e9-3189f7d94556": {
+      "id": "image-8fd55050-69b4-4075-94e9-3189f7d94556",
+      "parent": "column-7eb7d033-eb15-4901-b56d-33eec7643912",
+      "order": "7fffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "image",
+      "alt": "Product B",
+      "caption": "Proximity hover",
+      "href": "",
+      "fit": "cover",
+      "rounded": true
+    },
+    "heading-876f6465-1575-4774-88b2-19695aa61ec8": {
+      "id": "heading-876f6465-1575-4774-88b2-19695aa61ec8",
+      "parent": "column-7eb7d033-eb15-4901-b56d-33eec7643912",
+      "order": "bfffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "heading",
+      "text": "Motion",
+      "size": "md"
+    },
+    "button-798318f2-8740-4142-923e-4c400214b2c3": {
+      "id": "button-798318f2-8740-4142-923e-4c400214b2c3",
+      "parent": "body-10ef815f-e22c-4e5e-8cb0-85fcbd979cd5",
+      "order": "f7ffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "sm",
         "background": "none",
         "visible": true,
         "align": "left"
@@ -161,13 +195,16 @@
       "style": "filled",
       "fullWidth": false
     },
-    {
-      "id": "footer-24",
+    "footer-73b1130c-da62-4ba8-911a-94b1e36b0109": {
+      "id": "footer-73b1130c-da62-4ba8-911a-94b1e36b0109",
+      "parent": "body-10ef815f-e22c-4e5e-8cb0-85fcbd979cd5",
+      "order": "fbffffffffff",
+      "flex": 1,
       "chrome": {
-        "padding": "md",
+        "padding": "sm",
         "background": "none",
         "visible": true,
-        "align": "center"
+        "align": "left"
       },
       "type": "footer",
       "company": "Fluid Functionalism",
@@ -175,6 +212,6 @@
       "showUnsubscribe": true,
       "showSocial": false
     }
-  ],
-  "updatedAt": "2026-08-12T05:56:39.903Z"
+  },
+  "updatedAt": "2026-08-12T06:25:16.700Z"
 }

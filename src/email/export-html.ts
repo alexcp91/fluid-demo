@@ -1,24 +1,15 @@
 /**
- * Compile EmailDocument JSON → email-safe HTML.
+ * Compile EmailDocument → email-safe HTML via layout IR.
  *
- * Why not MJML / react-email (for this demo editor)?
- * - Source of truth is Zod JSON; both libs want a second authoring model
- *   (MJML XML or React trees) that we would only map into and throw away.
- * - Preview calls this on the client; API/plugin calls it in Node. One sync
- *   string function keeps both paths identical with zero dual packages.
- * - mjml-browser ≈ 1MB; @react-email/render pulls a heavy SSR/tooling graph.
- *   For six block types, battle-tested table + MSO patterns are enough.
- *
- * Follow-ups if templates grow (columns, responsive stacks, more clients):
- * consider MJML behind this same `exportToHtml` API with `mjml` (Node) +
- * `mjml-browser` (client), or move preview to the HTML API only.
+ * One sync string function for client preview and Node API.
  */
+import { compileLayout, type LayoutChild, type LayoutColumn } from "./layout.ts"
 import type {
   Align,
   BlockBg,
   ButtonStyle,
-  EmailBlock,
   EmailDocument,
+  LeafNode,
   Spacing,
 } from "./schema.ts"
 
@@ -62,28 +53,23 @@ function stripOuterP(html: string): string {
   return html.replace(/^<p[^>]*>/i, "").replace(/<\/p>$/i, "")
 }
 
-function cellStyle(block: EmailBlock): string {
-  const pad = PADDING_PX[block.chrome.padding]
-  const bg = BG_HEX[block.chrome.background]
+function cellStyle(chrome: LeafNode["chrome"] | LayoutColumn["chrome"]): string {
+  const pad = PADDING_PX[chrome.padding]
+  const bg = BG_HEX[chrome.background]
   return [
     `padding:${pad}px`,
     `background-color:${bg}`,
-    `text-align:${block.chrome.align}`,
+    `text-align:${chrome.align}`,
     `font-family:${FONT}`,
     `color:${BRAND}`,
     "mso-line-height-rule:exactly",
   ].join(";")
 }
 
-function alignAttr(align: Align): string {
-  return align
-}
-
-/** Nested presentation table so `align` works in Outlook for inline content. */
 function alignWrap(align: Align, inner: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
   <tr>
-    <td align="${alignAttr(align)}" style="font-family:${FONT};">
+    <td align="${align}" style="font-family:${FONT};">
 ${inner}
     </td>
   </tr>
@@ -128,13 +114,7 @@ function buttonColors(style: ButtonStyle): {
   }
 }
 
-/**
- * Bulletproof button: nested table + VML for Outlook (border-radius / padding
- * on bare <a> is unreliable in Word-based clients).
- */
-function renderButton(
-  block: Extract<EmailBlock, { type: "button" }>
-): string {
+function renderButton(block: Extract<LeafNode, { type: "button" }>): string {
   const label = stripOuterP(block.label)
   const href = escapeAttr(block.url || "#")
   const c = buttonColors(block.style)
@@ -149,14 +129,12 @@ function renderButton(
     )
   }
 
-  // Outlook VML roundrect (filled / outline). Skip for text style.
-  const vmlArc = "10800"
   const vmlFill =
     block.style === "filled"
       ? `fillcolor="${c.bg}" stroke="f"`
       : `fillcolor="${c.bg}" strokecolor="${c.border}" strokeweight="1px"`
   const vml = `<!--[if mso]>
-<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${href}" style="height:44px;v-text-anchor:middle;${widthStyle}" arcsize="${vmlArc}" ${vmlFill}>
+<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${href}" style="height:44px;v-text-anchor:middle;${widthStyle}" arcsize="10800" ${vmlFill}>
   <w:anchorlock/>
   <center style="color:${c.color};font-family:${FONT};font-size:14px;font-weight:600;">${label}</center>
 </v:roundrect>
@@ -176,10 +154,7 @@ function renderButton(
   return alignWrap(block.chrome.align, inner)
 }
 
-/** Demo has no image `src` — use a solid table cell (divs + bg-image fail in many clients). */
-function renderImage(
-  block: Extract<EmailBlock, { type: "image" }>
-): string {
+function renderImage(block: Extract<LeafNode, { type: "image" }>): string {
   const radius = block.rounded ? "8px" : "0"
   const alt = escapeAttr(block.alt || "Image")
   const height = 180
@@ -202,56 +177,7 @@ function renderImage(
   return alignWrap(block.chrome.align, inner)
 }
 
-function renderFrameInner(block: Extract<EmailBlock, { type: "frame" }>): string {
-  const kids = block.children.filter((c) => c.chrome.visible)
-  if (kids.length === 0) {
-    return `<div style="font-size:12px;color:${MUTED};font-family:${FONT};padding:8px;">Empty frame</div>`
-  }
-
-  if (block.direction === "row") {
-    const widths =
-      block.widths.length === kids.length
-        ? block.widths
-        : kids.map(() => 100 / kids.length)
-    const gap = PADDING_PX[block.gap]
-    const cells = kids
-      .map((child, i) => {
-        const w = widths[i] ?? 100 / kids.length
-        const padRight = i < kids.length - 1 ? gap : 0
-        const childHtml =
-          child.type === "frame"
-            ? renderFrameInner(child)
-            : renderLeafInner(child)
-        return `<td width="${w.toFixed(2)}%" valign="top" style="width:${w.toFixed(2)}%;padding:0 ${padRight}px 0 0;vertical-align:top;font-family:${FONT};">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
-  <tr>
-    <td align="${alignAttr(child.chrome.align)}" style="${cellStyle(child)}">
-${childHtml}
-    </td>
-  </tr>
-</table>
-</td>`
-      })
-      .join("\n")
-    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-row" style="border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
-  <tr>
-${cells}
-  </tr>
-</table>`
-  }
-
-  return kids
-    .map((child) => {
-      if (child.type === "frame") {
-        return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;"><tr><td style="${cellStyle(child)}">${renderFrameInner(child)}</td></tr></table>`
-      }
-      return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">${renderBlock(child)}</table>`
-    })
-    .join("\n")
-}
-
-function renderLeafInner(block: EmailBlock): string {
-  if (block.type === "frame") return renderFrameInner(block)
+function renderLeafInner(block: LeafNode): string {
   switch (block.type) {
     case "header": {
       const logo = block.showLogo
@@ -292,22 +218,62 @@ function renderLeafInner(block: EmailBlock): string {
   }
 }
 
-function renderBlock(block: EmailBlock): string {
-  if (!block.chrome.visible) return ""
-
-  if (block.type === "frame") {
+function renderChild(child: LayoutChild): string {
+  if (child.kind === "leaf") {
+    if (!child.node.chrome.visible) return ""
     return `<tr>
-  <td align="${alignAttr(block.chrome.align)}" style="${cellStyle(block)}">
-${renderFrameInner(block)}
+  <td align="${child.node.chrome.align}" style="${cellStyle(child.node.chrome)}">
+${renderLeafInner(child.node)}
   </td>
 </tr>`
   }
 
-  const inner = renderLeafInner(block)
+  const gap = PADDING_PX[child.gap]
+  const flexSum = child.columns.reduce((sum, col) => sum + col.flex, 0) || 1
+  const cells = child.columns
+    .map((column, index) => {
+      const widthPct = (column.flex / flexSum) * 100
+      const padRight = index < child.columns.length - 1 ? gap : 0
+      const inner = column.children
+        .map((nested) => {
+          if (nested.kind === "leaf") {
+            return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+  <tr>
+    <td align="${nested.node.chrome.align}" style="${cellStyle(nested.node.chrome)}">
+${renderLeafInner(nested.node)}
+    </td>
+  </tr>
+</table>`
+          }
+          return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">${renderChild(nested)}</table>`
+        })
+        .join("\n")
+      const valign =
+        column.vAlign === "middle"
+          ? "middle"
+          : column.vAlign === "bottom"
+            ? "bottom"
+            : "top"
+      return `<td width="${widthPct.toFixed(2)}%" valign="${valign}" style="width:${widthPct.toFixed(2)}%;padding:0 ${padRight}px 0 0;vertical-align:${valign};font-family:${FONT};">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+  <tr>
+    <td style="${cellStyle(column.chrome)}">
+${inner || `&nbsp;`}
+    </td>
+  </tr>
+</table>
+</td>`
+    })
+    .join("\n")
 
+  const rowClass = child.stackOnMobile ? "email-row" : "email-row-fixed"
   return `<tr>
-  <td align="${alignAttr(block.chrome.align)}" style="${cellStyle(block)}">
-${inner}
+  <td align="${child.chrome.align}" style="${cellStyle(child.chrome)}">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="${rowClass}" style="border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+  <tr>
+${cells}
+  </tr>
+</table>
   </td>
 </tr>`
 }
@@ -315,19 +281,15 @@ ${inner}
 function renderPreheader(doc: EmailDocument): string {
   if (!doc.meta.showPreheader || !doc.meta.previewText) return ""
   const text = escapeHtml(doc.meta.previewText)
-  // Hidden preview + spacer so clients don't pull body copy into the inbox snippet.
   const pad = "&nbsp;".repeat(100)
   return `<div style="display:none;font-size:1px;color:${PAGE_BG};line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${text}${pad}</div>`
 }
 
 /** Compile an EmailDocument to email-safe HTML (tables + inline CSS + Outlook VML). */
 export function exportToHtml(doc: EmailDocument): string {
-  const width = Number(doc.meta.width) || 600
-  const rows = doc.blocks
-    .map((block) => renderBlock(block))
-    .filter(Boolean)
-    .join("\n")
-
+  const layout = compileLayout(doc)
+  const width = layout.width
+  const rows = layout.children.map(renderChild).filter(Boolean).join("\n")
   const preheader = renderPreheader(doc)
   const title = escapeAttr(doc.meta.subject || "Email")
 

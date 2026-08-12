@@ -8,15 +8,17 @@ import { readPaletteBlockType } from "./palette-drag"
  * palette block type is being dragged.
  */
 export function DropSlot({
+  into,
   index,
   empty,
 }: {
+  into: string
   index: number
   /** Tall empty-canvas drop area */
   empty?: boolean
 }) {
   const paletteDragType = useEmailStore((s) => s.paletteDragType)
-  const insertBlockAt = useEmailStore((s) => s.insertBlockAt)
+  const insertLeafAt = useEmailStore((s) => s.insertLeafAt)
   const setPaletteDragType = useEmailStore((s) => s.setPaletteDragType)
   const [over, setOver] = useState(false)
 
@@ -33,6 +35,7 @@ export function DropSlot({
     <div
       role="presentation"
       data-drop-slot
+      data-drop-into={into}
       data-drop-index={index}
       onDragEnter={(e) => {
         if (accept(e)) setOver(true)
@@ -50,7 +53,7 @@ export function DropSlot({
         setOver(false)
         const type =
           readPaletteBlockType(e.dataTransfer) ?? paletteDragType
-        if (type) insertBlockAt(type, index)
+        if (type) insertLeafAt(type, into, index)
         setPaletteDragType(null)
       }}
       className={cn(

@@ -1,7 +1,9 @@
 import { useRef, type ReactNode } from "react"
 import { Copy, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useEmailStore, useSelectedBlock } from "@/email/store"
+import { useEmailStore, useSelectedNode } from "@/email/store"
+import { childrenOf } from "@/email/tree"
+import type { ContainerId } from "@/email/ids"
 import { Button } from "@/components/ui/button"
 import { Tooltip } from "@/components/ui/tooltip"
 import { FormatToolbar } from "./format-toolbar"
@@ -16,7 +18,8 @@ import {
   PADDING_CLASS,
   RICH_BLOCK_TYPES,
   type Align,
-  type EmailBlock,
+  type EmailDocument,
+  type EmailNode,
 } from "./types"
 
 function SelectableBlock({
@@ -38,8 +41,8 @@ function SelectableBlock({
   className?: string
   children: ReactNode
 }) {
-  const duplicateBlock = useEmailStore((s) => s.duplicateBlock)
-  const removeBlock = useEmailStore((s) => s.removeBlock)
+  const duplicateNode = useEmailStore((s) => s.duplicateNode)
+  const removeNode = useEmailStore((s) => s.removeNode)
 
   return (
     <div
@@ -87,7 +90,7 @@ function SelectableBlock({
               variant="ghost"
               size="icon-compact"
               aria-label="Duplicate block"
-              onClick={() => duplicateBlock(id)}
+              onClick={() => duplicateNode(id)}
             >
               <Copy size={14} strokeWidth={1.75} />
             </Button>
@@ -98,7 +101,7 @@ function SelectableBlock({
               variant="ghost"
               size="icon-compact"
               aria-label="Delete block"
-              onClick={() => removeBlock(id)}
+              onClick={() => removeNode(id)}
             >
               <Trash2 size={14} strokeWidth={1.75} />
             </Button>
@@ -117,19 +120,28 @@ function alignClass(align: Align) {
 }
 
 function BlockView({
-  block,
+  node,
+  doc,
   selectedId,
-  nested = false,
 }: {
-  block: EmailBlock
+  node: EmailNode
+  doc: EmailDocument
   selectedId: string | null
-  nested?: boolean
 }) {
   const select = useEmailStore((s) => s.select)
-  const updateBlock = useEmailStore((s) => s.updateBlock)
-  const selected = selectedId === block.id
-  const label = BLOCK_LABELS[block.type]
-  const { chrome } = block
+  const updateNode = useEmailStore((s) => s.updateNode)
+  const setText = useEmailStore((s) => s.setText)
+  const device = useEmailStore((s) => s.device)
+  const selected = selectedId === node.id
+  const label =
+    node.type === "row" || node.type === "column"
+      ? node.type === "row"
+        ? "Row"
+        : "Column"
+      : node.type === "body"
+        ? "Body"
+        : BLOCK_LABELS[node.type]
+  const { chrome } = node
   const shell = cn(
     PADDING_CLASS[chrome.padding],
     BG_CLASS[chrome.background],
@@ -137,36 +149,36 @@ function BlockView({
   )
   const hidden = !chrome.visible
 
-  if (block.type === "header") {
+  if (node.type === "header") {
     return (
       <SelectableBlock
-        id={block.id}
+        id={node.id}
         label={label}
         selected={selected}
         hidden={hidden}
-        sortable={!nested}
+        sortable
         onSelect={select}
         className={shell}
       >
         <div className={cn("flex flex-col gap-0.5", alignClass(chrome.align))}>
-          {block.showLogo && (
+          {node.showLogo && (
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground text-[11px] font-medium text-background">
-              {(block.brand.replace(/<[^>]+>/g, "") || "F").slice(0, 1)}
+              {(node.brand.replace(/<[^>]+>/g, "") || "F").slice(0, 1)}
             </div>
           )}
           <InlineText
             as="span"
-            value={block.brand}
-            onChange={(brand) => updateBlock(block.id, { brand })}
-            onEditStart={() => select(block.id)}
+            value={node.brand}
+            onChange={(brand) => updateNode(node.id, node.type, { brand })}
+            onEditStart={() => select(node.id)}
             className="text-subtitle font-medium tracking-tight text-foreground"
             placeholder="Brand"
           />
           <InlineText
             as="span"
-            value={block.tagline}
-            onChange={(tagline) => updateBlock(block.id, { tagline })}
-            onEditStart={() => select(block.id)}
+            value={node.tagline}
+            onChange={(tagline) => updateNode(node.id, node.type, { tagline })}
+            onEditStart={() => select(node.id)}
             className="text-caption text-muted-foreground"
             placeholder="Tagline"
           />
@@ -175,38 +187,38 @@ function BlockView({
     )
   }
 
-  if (block.type === "image") {
+  if (node.type === "image") {
     return (
       <SelectableBlock
-        id={block.id}
+        id={node.id}
         label={label}
         selected={selected}
         hidden={hidden}
-        sortable={!nested}
+        sortable
         onSelect={select}
         className={shell}
       >
         <div
           className={cn(
             "flex h-36 w-full flex-col items-center justify-center gap-1 bg-muted text-caption text-muted-foreground",
-            block.rounded ? "rounded-lg" : "rounded-none",
-            block.fit === "contain" && "border border-dashed border-border",
-            block.href && "ring-1 ring-border/60"
+            node.rounded ? "rounded-lg" : "rounded-none",
+            node.fit === "contain" && "border border-dashed border-border",
+            node.href && "ring-1 ring-border/60"
           )}
-          title={block.href || undefined}
+          title={node.href || undefined}
         >
           <InlineText
             as="span"
-            value={block.alt}
-            onChange={(alt) => updateBlock(block.id, { alt })}
-            onEditStart={() => select(block.id)}
+            value={node.alt}
+            onChange={(alt) => updateNode(node.id, node.type, { alt })}
+            onEditStart={() => select(node.id)}
             placeholder="Alt text"
           />
           <InlineText
             as="span"
-            value={block.caption}
-            onChange={(caption) => updateBlock(block.id, { caption })}
-            onEditStart={() => select(block.id)}
+            value={node.caption}
+            onChange={(caption) => updateNode(node.id, node.type, { caption })}
+            onEditStart={() => select(node.id)}
             className="text-[11px] opacity-70"
             placeholder="Caption"
           />
@@ -215,14 +227,14 @@ function BlockView({
     )
   }
 
-  if (block.type === "heading") {
+  if (node.type === "heading") {
     return (
       <SelectableBlock
-        id={block.id}
+        id={node.id}
         label={label}
         selected={selected}
         hidden={hidden}
-        sortable={!nested}
+        sortable
         onSelect={select}
         className={shell}
       >
@@ -230,14 +242,14 @@ function BlockView({
           <InlineText
             as="h2"
             rich
-            value={block.text}
-            onChange={(text) => updateBlock(block.id, { text })}
-            onEditStart={() => select(block.id)}
+            value={node.text}
+            onChange={(text) => setText(node.id, text)}
+            onEditStart={() => select(node.id)}
             className={cn(
               "block w-full font-medium tracking-tight text-foreground",
-              block.size === "lg" && "text-title",
-              block.size === "md" && "text-subtitle",
-              block.size === "sm" && "text-body"
+              node.size === "lg" && "text-title",
+              node.size === "md" && "text-subtitle",
+              node.size === "sm" && "text-body"
             )}
             placeholder="Heading"
           />
@@ -246,14 +258,14 @@ function BlockView({
     )
   }
 
-  if (block.type === "paragraph") {
+  if (node.type === "paragraph") {
     return (
       <SelectableBlock
-        id={block.id}
+        id={node.id}
         label={label}
         selected={selected}
         hidden={hidden}
-        sortable={!nested}
+        sortable
         onSelect={select}
         className={shell}
       >
@@ -262,12 +274,12 @@ function BlockView({
             as="p"
             rich
             multiline
-            value={block.text}
-            onChange={(text) => updateBlock(block.id, { text })}
-            onEditStart={() => select(block.id)}
+            value={node.text}
+            onChange={(text) => setText(node.id, text)}
+            onEditStart={() => select(node.id)}
             className={cn(
               "block w-full text-body leading-relaxed",
-              block.muted ? "text-muted-foreground" : "text-foreground"
+              node.muted ? "text-muted-foreground" : "text-foreground"
             )}
             placeholder="Write something…"
           />
@@ -276,14 +288,14 @@ function BlockView({
     )
   }
 
-  if (block.type === "button") {
+  if (node.type === "button") {
     return (
       <SelectableBlock
-        id={block.id}
+        id={node.id}
         label={label}
         selected={selected}
         hidden={hidden}
-        sortable={!nested}
+        sortable
         onSelect={select}
         className={shell}
       >
@@ -298,19 +310,21 @@ function BlockView({
           <span
             className={cn(
               "inline-flex min-h-9 min-w-[5rem] items-center justify-center px-4 text-[13px] font-medium",
-              block.fullWidth && "w-full",
-              block.style === "filled" &&
+              node.fullWidth && "w-full",
+              node.style === "filled" &&
                 "rounded-full bg-foreground text-background",
-              block.style === "outline" &&
+              node.style === "outline" &&
                 "rounded-full ring-1 ring-border text-foreground",
-              block.style === "text" && "rounded-md text-foreground underline"
+              node.style === "text" && "rounded-md text-foreground underline"
             )}
           >
             <InlineText
               as="span"
-              value={block.label}
-              onChange={(next) => updateBlock(block.id, { label: next })}
-              onEditStart={() => select(block.id)}
+              value={node.label}
+              onChange={(next) =>
+                updateNode(node.id, node.type, { label: next })
+              }
+              onEditStart={() => select(node.id)}
               placeholder="Button"
             />
           </span>
@@ -319,53 +333,45 @@ function BlockView({
     )
   }
 
-  if (block.type === "frame") {
-    const isRow = block.direction === "row"
-    const widths =
-      block.widths.length === block.children.length
-        ? block.widths
-        : block.children.map(() => 100 / Math.max(block.children.length, 1))
+  if (node.type === "row") {
+    const columns = childrenOf(doc, node.id as ContainerId).filter(
+      (child) => child.type === "column"
+    )
     return (
       <SelectableBlock
-        id={block.id}
-        label={isRow ? "Row" : "Column"}
+        id={node.id}
+        label="Row"
         selected={selected}
         hidden={hidden}
-        sortable={!nested}
+        sortable
         onSelect={select}
         className={cn(shell, "ring-1 ring-dashed ring-border/70")}
       >
         <div
           className={cn(
             "flex w-full",
-            GAP_CLASS[block.gap],
-            isRow ? "flex-row items-stretch" : "flex-col",
-            block.children.length === 0 &&
-              "min-h-16 items-center justify-center"
+            GAP_CLASS[node.gap],
+            node.stackOnMobile && device === "mobile"
+              ? "flex-col"
+              : "flex-row",
+            "items-stretch"
           )}
         >
-          {block.children.length === 0 ? (
+          {columns.length === 0 ? (
             <p className="px-2 py-4 text-center text-[11px] text-muted-foreground">
-              Empty {isRow ? "row" : "column"}
+              Empty row
             </p>
           ) : (
-            block.children.map((child, i) => (
+            columns.map((column) => (
               <div
-                key={child.id}
-                className="min-w-0"
-                style={
-                  isRow
-                    ? {
-                        flex: `1 1 ${widths[i] ?? 50}%`,
-                        maxWidth: `${widths[i] ?? 50}%`,
-                      }
-                    : undefined
-                }
+                key={column.id}
+                className="min-w-0 flex-1"
+                style={{ flexGrow: column.flex }}
               >
                 <BlockView
-                  block={child}
+                  node={column}
+                  doc={doc}
                   selectedId={selectedId}
-                  nested
                 />
               </div>
             ))
@@ -375,13 +381,44 @@ function BlockView({
     )
   }
 
+  if (node.type === "column") {
+    return (
+      <SelectableBlock
+        id={node.id}
+        label="Column"
+        selected={selected}
+        hidden={hidden}
+        sortable={false}
+        onSelect={select}
+        className={cn(shell, "h-full ring-1 ring-dashed ring-border/60")}
+      >
+        <div
+          className={cn(
+            "flex h-full min-h-10 flex-col",
+            node.vAlign === "middle" && "justify-center",
+            node.vAlign === "bottom" && "justify-end"
+          )}
+        >
+          <ContainerChildren
+            doc={doc}
+            parent={node.id as ContainerId}
+            selectedId={selectedId}
+            emptyLabel="Drop a block into this column"
+          />
+        </div>
+      </SelectableBlock>
+    )
+  }
+
+  if (node.type === "body") return null
+
   return (
     <SelectableBlock
-      id={block.id}
+      id={node.id}
       label={label}
       selected={selected}
       hidden={hidden}
-      sortable={!nested}
+      sortable
       onSelect={select}
       className={shell}
     >
@@ -393,26 +430,26 @@ function BlockView({
       >
         <InlineText
           as="span"
-          value={block.company}
-          onChange={(company) => updateBlock(block.id, { company })}
-          onEditStart={() => select(block.id)}
+          value={node.company}
+          onChange={(company) => updateNode(node.id, node.type, { company })}
+          onEditStart={() => select(node.id)}
           className="text-caption text-foreground"
           placeholder="Company"
         />
         <InlineText
           as="span"
-          value={block.address}
-          onChange={(address) => updateBlock(block.id, { address })}
-          onEditStart={() => select(block.id)}
+          value={node.address}
+          onChange={(address) => updateNode(node.id, node.type, { address })}
+          onEditStart={() => select(node.id)}
           className="text-caption text-muted-foreground"
           placeholder="Address"
         />
-        {block.showUnsubscribe && (
+        {node.showUnsubscribe && (
           <span className="text-caption text-muted-foreground underline">
             Unsubscribe
           </span>
         )}
-        {block.showSocial && (
+        {node.showSocial && (
           <span className="text-caption text-muted-foreground">
             Twitter · LinkedIn · GitHub
           </span>
@@ -422,26 +459,83 @@ function BlockView({
   )
 }
 
-export function EmailCanvas() {
+function ContainerChildren({
+  doc,
+  parent,
+  selectedId,
+  emptyLabel,
+}: {
+  doc: EmailDocument
+  parent: ContainerId
+  selectedId: string | null
+  emptyLabel: string
+}) {
   const listRef = useRef<HTMLDivElement>(null)
+  const paletteDragType = useEmailStore((s) => s.paletteDragType)
+  const reorderChildren = useEmailStore((s) => s.reorderChildren)
+  const children = childrenOf(doc, parent)
+
+  useSortableBlocks(listRef, {
+    order: paletteDragType ? [] : children.map((child) => child.id),
+    onReorder: (orderedIds) => reorderChildren(parent, orderedIds),
+  })
+
+  if (paletteDragType) {
+    return (
+      <div className="flex min-h-10 flex-col gap-1">
+        {children.length === 0 ? (
+          <DropSlot into={parent} index={0} empty />
+        ) : (
+          <>
+            <DropSlot into={parent} index={0} />
+            {children.map((child, index) => (
+              <div key={child.id} className="contents">
+                <BlockView node={child} doc={doc} selectedId={selectedId} />
+                <DropSlot into={parent} index={index + 1} />
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div ref={listRef} className="email-sortable flex min-h-10 flex-col gap-1">
+      {children.map((child) => (
+        <BlockView
+          key={child.id}
+          node={child}
+          doc={doc}
+          selectedId={selectedId}
+        />
+      ))}
+      {children.length === 0 && (
+        <p className="px-3 py-4 text-center text-[11px] text-muted-foreground">
+          {emptyLabel}
+        </p>
+      )}
+    </div>
+  )
+}
+
+export function EmailCanvas() {
   const doc = useEmailStore((s) => s.doc)
   const selected = useEmailStore((s) => s.selectedId)
   const device = useEmailStore((s) => s.device)
   const paletteDragType = useEmailStore((s) => s.paletteDragType)
   const select = useEmailStore((s) => s.select)
-  const reorderBlocks = useEmailStore((s) => s.reorderBlocks)
-  const selectedBlock = useSelectedBlock()
+  const selectedNode = useSelectedNode()
 
   const width = device === "mobile" ? 360 : Number(doc.meta.width)
   const richCapable = Boolean(
-    selectedBlock && RICH_BLOCK_TYPES.includes(selectedBlock.type)
+    selectedNode &&
+      selectedNode.type !== "body" &&
+      selectedNode.type !== "row" &&
+      selectedNode.type !== "column" &&
+      RICH_BLOCK_TYPES.includes(selectedNode.type)
   )
   const isPaletteDragging = Boolean(paletteDragType)
-
-  useSortableBlocks(listRef, {
-    order: isPaletteDragging ? [] : doc.blocks.map((b) => b.id),
-    onReorder: reorderBlocks,
-  })
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-auto bg-muted/40 px-6 py-8">
@@ -479,39 +573,12 @@ export function EmailCanvas() {
             </p>
           )}
 
-          {isPaletteDragging ? (
-            <div className="flex flex-col gap-1">
-              {doc.blocks.length === 0 ? (
-                <DropSlot index={0} empty />
-              ) : (
-                <>
-                  <DropSlot index={0} />
-                  {doc.blocks.map((block, i) => (
-                    <div key={block.id} className="contents">
-                      <BlockView block={block} selectedId={selected} />
-                      <DropSlot index={i + 1} />
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          ) : (
-            <div ref={listRef} className="email-sortable flex flex-col gap-1">
-              {doc.blocks.map((block) => (
-                <BlockView
-                  key={block.id}
-                  block={block}
-                  selectedId={selected}
-                />
-              ))}
-            </div>
-          )}
-
-          {doc.blocks.length === 0 && !isPaletteDragging && (
-            <p className="px-3 py-8 text-center text-caption text-muted-foreground">
-              Click or drag a block from the palette to get started
-            </p>
-          )}
+          <ContainerChildren
+            doc={doc}
+            parent={doc.root}
+            selectedId={selected}
+            emptyLabel="Click or drag a block from the palette to get started"
+          />
         </div>
       </div>
     </div>
