@@ -20,9 +20,9 @@ function PrototypesPage() {
             </Badge>
           </div>
           <p className="max-w-2xl text-body text-muted-foreground">
-            Inspector studies for the email editor. Three densities of the
-            same Image control set — simpler chrome first, more structure
-            later. Fluid tokens throughout.
+            Inspector studies for the email editor. Core layout: one list.
+            Each section starts with presets, then flips to Adjust for
+            bespoke controls.
           </p>
         </header>
 
@@ -30,9 +30,10 @@ function PrototypesPage() {
           <div className="flex flex-col gap-1.5">
             <h2 className="text-title font-medium tracking-tight">Image</h2>
             <p className="max-w-2xl text-caption text-muted-foreground">
-              Core is one list with linked values. Plus adds tabs, URL,
-              dynamic content, and per-side unlinking. Full adds
-              desktop/mobile overrides.
+              Simple is named presets — square / rounded / circle, none /
+              tight / room, none / line / strong. Adjust keeps the same
+              values and opens per-side radius, padding, margin, border
+              stroke, and the rest of the Tabular set.
             </p>
           </div>
           <ImagePrototypeGallery />
