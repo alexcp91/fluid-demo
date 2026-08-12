@@ -1,7 +1,6 @@
 {
+  "version": 2,
   "id": "product-launch",
-  "name": "Product launch",
-  "updatedAt": "2026-08-11T18:30:00.000Z",
   "meta": {
     "subject": "Introducing Fluid Controls",
     "previewText": "Springs, proximity hover, and a size ladder that stays consistent.",
@@ -9,71 +8,102 @@
     "showPreheader": true,
     "fromName": "Fluid"
   },
-  "blocks": [
-    {
+  "root": "body-9a1aa302-f719-4372-825c-213630d5c96b",
+  "nodes": {
+    "body-9a1aa302-f719-4372-825c-213630d5c96b": {
+      "id": "body-9a1aa302-f719-4372-825c-213630d5c96b",
+      "parent": null,
+      "order": "7fffffffffff",
+      "flex": 1,
+      "chrome": {
+        "padding": "none",
+        "background": "none",
+        "visible": true,
+        "align": "left"
+      },
+      "type": "body"
+    },
+    "header-1": {
       "id": "header-1",
-      "type": "header",
+      "parent": "body-9a1aa302-f719-4372-825c-213630d5c96b",
+      "order": "7fffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "md",
         "background": "none",
         "visible": true,
         "align": "left"
       },
+      "type": "header",
       "brand": "Fluid",
       "tagline": "New release",
       "showLogo": true
     },
-    {
+    "heading-1": {
       "id": "heading-1",
-      "type": "heading",
+      "parent": "body-9a1aa302-f719-4372-825c-213630d5c96b",
+      "order": "bfffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "sm",
         "background": "none",
         "visible": true,
         "align": "left"
       },
+      "type": "heading",
       "text": "Ship interfaces that feel alive",
       "size": "lg"
     },
-    {
+    "paragraph-1": {
       "id": "paragraph-1",
-      "type": "paragraph",
+      "parent": "body-9a1aa302-f719-4372-825c-213630d5c96b",
+      "order": "dfffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "sm",
         "background": "none",
         "visible": true,
         "align": "left"
       },
-      "text": "Our latest controls bring spring physics and proximity hover to every press \u2014 without changing your layout system.",
+      "type": "paragraph",
+      "text": "Our latest controls bring spring physics and proximity hover to every press — without changing your layout system.",
       "muted": false
     },
-    {
+    "button-1": {
       "id": "button-1",
-      "type": "button",
+      "parent": "body-9a1aa302-f719-4372-825c-213630d5c96b",
+      "order": "efffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "md",
         "background": "none",
         "visible": true,
         "align": "left"
       },
+      "type": "button",
       "label": "See what's new",
       "url": "https://example.com/launch",
       "style": "filled",
       "fullWidth": false
     },
-    {
+    "footer-1": {
       "id": "footer-1",
-      "type": "footer",
+      "parent": "body-9a1aa302-f719-4372-825c-213630d5c96b",
+      "order": "f7ffffffffff",
+      "flex": 1,
       "chrome": {
         "padding": "md",
         "background": "none",
         "visible": true,
         "align": "center"
       },
+      "type": "footer",
       "company": "Fluid Functionalism",
       "address": "San Francisco, CA",
       "showUnsubscribe": true,
       "showSocial": false
     }
-  ]
+  },
+  "updatedAt": "2026-08-11T18:30:00.000Z",
+  "name": "Product launch"
 }
