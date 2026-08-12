@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router"
 import {
   Boxes,
   LayoutDashboard,
+  LayoutTemplate,
   Mail,
   Settings,
   type LucideIcon,
@@ -12,13 +13,14 @@ import { cn } from "@/lib/utils"
 import { SizeProvider } from "@/lib/size-context"
 
 interface NavItem {
-  to: "/" | "/email-editor" | "/settings" | "/components"
+  to: "/" | "/email-editor" | "/email-templates" | "/settings" | "/components"
   label: string
   icon: LucideIcon
 }
 
 const NAV: NavItem[] = [
   { to: "/", label: "Home", icon: LayoutDashboard },
+  { to: "/email-templates", label: "Email templates", icon: LayoutTemplate },
   { to: "/email-editor", label: "Email editor", icon: Mail },
   { to: "/components", label: "Components", icon: Boxes },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -69,6 +71,11 @@ export function AppSidebar() {
               >
                 <Icon size={14} strokeWidth={active ? 2 : 1.5} />
                 <span className="flex-1 truncate">{item.label}</span>
+                {item.to === "/email-templates" && (
+                  <Badge variant="dot" color="blue">
+                    New
+                  </Badge>
+                )}
                 {item.to === "/email-editor" && (
                   <Badge variant="dot" color="blue">
                     Live
