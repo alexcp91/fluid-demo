@@ -107,14 +107,14 @@ export function TemplateCard({
   return (
     <article
       className={cn(
-        "group flex flex-col overflow-hidden bg-card shadow-surface-3 transition-colors duration-80 hover:bg-muted/30",
+        "group relative flex flex-col bg-card shadow-surface-3 transition-colors duration-80 hover:bg-muted/30",
         shape.container
       )}
     >
       <Link
         to="/email-editor"
         search={{ templateId: template.id }}
-        className="relative block aspect-[4/5] overflow-hidden bg-muted/50 outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)]"
+        className="relative block aspect-[4/5] overflow-hidden rounded-t-[inherit] bg-muted/50 outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)]"
         aria-label={`Edit design · ${template.name}`}
       >
         <iframe
@@ -155,7 +155,7 @@ export function TemplateCard({
             <div
               role="menu"
               className={cn(
-                "absolute right-0 z-20 mt-1 w-44 overflow-hidden bg-card p-1 shadow-surface-5",
+                "absolute right-0 bottom-full z-30 mb-1 w-44 overflow-hidden bg-card p-1 shadow-surface-5",
                 shape.container
               )}
             >
