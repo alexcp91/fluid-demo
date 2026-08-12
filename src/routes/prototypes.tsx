@@ -20,9 +20,9 @@ function PrototypesPage() {
             </Badge>
           </div>
           <p className="max-w-2xl text-body text-muted-foreground">
-            Inspector studies for the email editor. Three densities of the
-            same Image control set — simpler chrome first, more structure
-            later. Fluid tokens throughout.
+            Four Core inspectors. Same Image functions and Fluid chrome.
+            Each one tries a different way to show a good default and still
+            let you customize.
           </p>
         </header>
 
@@ -30,9 +30,9 @@ function PrototypesPage() {
           <div className="flex flex-col gap-1.5">
             <h2 className="text-title font-medium tracking-tight">Image</h2>
             <p className="max-w-2xl text-caption text-muted-foreground">
-              Core is one list with linked values. Plus adds tabs, URL,
-              dynamic content, and per-side unlinking. Full adds
-              desktop/mobile overrides.
+              Baseline is Core as it stands. Stops names the values worth
+              landing on. Packed puts the stepper on the same row. More
+              hides the rare controls behind one disclosure.
             </p>
           </div>
           <ImagePrototypeGallery />

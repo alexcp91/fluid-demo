@@ -194,6 +194,27 @@ const CORNER_LABEL: Record<CornerEdge, string> = {
   bottomLeft: "Bottom left",
 }
 
+export function MoreToggle({
+  open,
+  onToggle,
+}: {
+  open: boolean
+  onToggle: () => void
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="compact"
+      aria-expanded={open}
+      onClick={onToggle}
+      className="self-start"
+    >
+      {open ? "Less" : "More"}
+    </Button>
+  )
+}
+
 export function CornerGrid({
   value,
   onCornerChange,
